@@ -18,8 +18,10 @@ export function Legend({ lines }: { lines: readonly Line[] }): JSX.Element {
           <span className="legend__sample legend__sample--operational" /> Operational
         </li>
         <li>
-          <span className="legend__sample legend__sample--construction" /> Under construction / work
-          area
+          <span className="legend__sample legend__sample--construction" /> Under construction
+        </li>
+        <li>
+          <span className="legend__sample legend__sample--work-area" /> Closed work area (active)
         </li>
         <li>
           <span className="legend__sample legend__sample--planned" /> Planned (not yet started)
