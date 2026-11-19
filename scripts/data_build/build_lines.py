@@ -381,6 +381,14 @@ def green() -> None:
             "nta-site/תתל 71 א/תכניות מאושרות סרוקות/הוראות.pdf",
             'תת"ל 71/א regulations (scanned) – cover page',
         ),
+        "b": regulation_material(
+            "nta-site/תתל 71 ב/תתל 71 ב- מסמכים סרוקים למתן תוקף/הוראות.pdf",
+            'תת"ל 71/ב regulations (scanned) – cover page',
+        ),
+        "c": regulation_material(
+            "nta-site/תתל 71 ג/תתל 71 ג- מסמכים סרוקים מאושרים/הוראות.pdf",
+            'תת"ל 71/ג regulations (scanned) – cover page',
+        ),
         "d": regulation_material(
             "nta-site/תתל 71 ד/תתל 71ד - חדרי נהגים/תתל_ 71_ ד_תדפיס הוראות התכנית_חתום להפקדה ות-ל_1.pdf",
             "תת\"ל 71/ד – drivers' rooms along the Green line (explanatory note)",
@@ -504,7 +512,7 @@ def green() -> None:
                 wa("G3-2", "Tunnel between Levinsky and Nordau", between(trunk, levinsky, nordau)),
                 wa("G3-4", "Yarkon bridge (Rokach)", along(trunk, "שדרות רוקח", "רוקח")),
             ],
-            [],
+            compact([regs["b"]]),
         ),
         SegmentSpec(
             "green-north-herzliya",
@@ -537,7 +545,7 @@ def green() -> None:
                     along(north, "ישעיהו ליבוביץ", "נעמי שמר"),
                 ),
             ],
-            compact([regs["d"]]),
+            compact([regs["c"], regs["d"]]),
         ),
         SegmentSpec(
             "green-kiryat-atidim",
@@ -589,7 +597,7 @@ def green() -> None:
                     between(ne, Cut(street=("דבורה הנביאה",)), END),
                 ),
             ],
-            [],
+            compact([regs["c"]]),
         ),
     ]
     write_line(
@@ -624,6 +632,12 @@ def purple() -> None:
     p70a1, p70b, p70c = Plan("70", "תתל/ 70/ א/ 1"), Plan("70", "תתל/ 70/ ב"), Plan("70", "תתל/ 70/ ג")
     reg70a = regulation_material(
         "nta-site/תתל 70 א/הוראות.pdf", 'תת"ל 70/א regulations (scanned) – cover page'
+    )
+    reg70b = regulation_material(
+        "nta-site/תתל 70 ב/הוראות תתל 70 ב.pdf", 'תת"ל 70/ב regulations (scanned) – cover page'
+    )
+    reg70c = regulation_material(
+        "nta-site/תתל 70 ג/תת~ל 70 ג/הוראות תתל 70 ג.pdf", 'תת"ל 70/ג regulations (scanned) – cover page'
     )
 
     def along(chain: LineString, *names: str) -> Callable[[], BaseGeometry]:
@@ -746,7 +760,7 @@ def purple() -> None:
                 wa("PLW2-1", "Aluf Sadeh: Oded – Rabin", along(west, "אלוף שדה")),
                 wa("PLW2-4", "Raphael Eitan: Sheba – HaRav Goren", along(west, "רפאל איתן")),
             ],
-            [],
+            compact([reg70b]),
         ),
         SegmentSpec(
             "purple-bar-ilan",
@@ -758,7 +772,7 @@ def purple() -> None:
             [p70b],
             g("PLW2-5", "PLW2-6", "A8", "TR", "PTO"),
             [wa("PLW2-6", "Max ve-Anna Webb: Bar-Ilan – Jabotinsky", along(bar_ilan, "מקס ואנה ווב"))],
-            [],
+            compact([reg70b]),
         ),
         SegmentSpec(
             "purple-east-yehud",
@@ -770,7 +784,7 @@ def purple() -> None:
             [p70b, p70c],
             g("PLE1", "PLE2.5", "PLE3.2", "A9", "A10", "B5", "TR", "PTO"),
             [wa("PLE1", "Raphael Eitan: Sheba – Road 461", along(east, "רפאל איתן"))],
-            [],
+            compact([reg70b, reg70c]),
         ),
     ]
     write_line(
@@ -810,6 +824,16 @@ def metro() -> None:
     """Metro lines M1, M2, M3 (תת"ל 101, 102, 103)."""
     rows = metro_items()
     by_line = {m: [it for it in rows if f"קו M{m}" in str(it.row.get("מקטע"))] for m in ("1", "2", "3")}
+    m1c_purpose = regulation_material(
+        "metro-july-2025/תתל 101 ג/תתל_ 101_ ג_תדפיס הוראות התכנית_חתום לאישור ות-ל_1.pdf",
+        'תת"ל 101/ג regulations – plan objective (section 2.1)',
+        page=22,
+        quote="התוויה של חלקו הצפוני של קו מטרו M1, המבנים והמתקנים המהווים חלק ממנו והנחוצים להקמתו, הפעלתו ותחזוקתו.",
+    )
+    m2_regs = regulation_material(
+        "metro-july-2025/תתל 102/הוראות - תדפיס הוראות התכנית.pdf",
+        'תת"ל 102 regulations (scanned) – cover page',
+    )
     mavat_103g = regulation_material(
         "mavat-5005400010/tatal-103-g-regulations.pdf", 'תת"ל 103/ג regulations – cover page'
     )
@@ -836,7 +860,13 @@ def metro() -> None:
                 traced_segment(
                     "m1-north-central", "M1 North – central part (101/ב)", Plan("101", "תתל/ 101/ ב"), [], []
                 ),
-                traced_segment("m1-north", "M1 North (101/ג)", Plan("101", "תתל/ 101/ ג"), [], []),
+                traced_segment(
+                    "m1-north",
+                    "M1 North (101/ג)",
+                    Plan("101", "תתל/ 101/ ג"),
+                    [],
+                    compact([m1c_purpose]),
+                ),
             ],
         ),
         (
@@ -853,7 +883,7 @@ def metro() -> None:
                     "M2 Segula depot – Holon terminus (102)",
                     Plan("102", "תתל/ 102"),
                     by_line["2"],
-                    compact([mavat_102b, mavat_102b_draw]),
+                    compact([m2_regs, mavat_102b, mavat_102b_draw]),
                 )
             ],
         ),
@@ -892,8 +922,34 @@ def brown() -> None:
     """Brown line (תת"ל 72) – statutory plans only (no published schedule)."""
     a, b = Plan("72", "תתל/ 72/ א"), Plan("72", "תתל/ 72/ ב")
     specs = [
-        traced_segment("brown-west", "Brown line and southern Red line branch (72/א)", a, [], []),
-        traced_segment("brown-east", "Brown line – eastern section (72/ב)", b, [], []),
+        traced_segment(
+            "brown-west",
+            "Brown line and southern Red line branch (72/א)",
+            a,
+            [],
+            compact(
+                [
+                    regulation_material(
+                        "nta-site/תתל72א/נתע חוברות/הוראות התוכנית .pdf",
+                        'תת"ל 72/א regulations (scanned) – cover page',
+                    )
+                ]
+            ),
+        ),
+        traced_segment(
+            "brown-east",
+            "Brown line – eastern section (72/ב)",
+            b,
+            [],
+            compact(
+                [
+                    regulation_material(
+                        "nta-site/תתל72ב/חוברות/הוראות התכנית.pdf",
+                        'תת"ל 72/ב regulations (scanned) – cover page',
+                    )
+                ]
+            ),
+        ),
     ]
     write_line(
         {

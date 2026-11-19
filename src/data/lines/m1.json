@@ -960,7 +960,21 @@
         }
       ],
       "workAreas": [],
-      "materials": []
+      "materials": [
+        {
+          "kind": "image",
+          "title": "תת\"ל 101/ג regulations – plan objective (section 2.1)",
+          "image": "references/metro-july-2025-3bd69e0c27/page-22.webp",
+          "sources": [
+            {
+              "docId": "metro-july-2025-3bd69e0c27",
+              "page": 22,
+              "quote": "התוויה של חלקו הצפוני של קו מטרו M1, המבנים והמתקנים המהווים חלק ממנו והנחוצים להקמתו, הפעלתו ותחזוקתו."
+            }
+          ],
+          "body": "התוויה של חלקו הצפוני של קו מטרו M1, המבנים והמתקנים המהווים חלק ממנו והנחוצים להקמתו, הפעלתו ותחזוקתו."
+        }
+      ]
     }
   ]
 }

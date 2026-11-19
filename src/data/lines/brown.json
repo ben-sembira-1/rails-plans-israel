@@ -142,7 +142,19 @@
         }
       ],
       "workAreas": [],
-      "materials": []
+      "materials": [
+        {
+          "kind": "image",
+          "title": "תת\"ל 72/א regulations (scanned) – cover page",
+          "image": "references/nta-site-c3f6de954b/page-1.webp",
+          "sources": [
+            {
+              "docId": "nta-site-c3f6de954b",
+              "page": 1
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "brown-east",
@@ -318,7 +330,19 @@
         }
       ],
       "workAreas": [],
-      "materials": []
+      "materials": [
+        {
+          "kind": "image",
+          "title": "תת\"ל 72/ב regulations (scanned) – cover page",
+          "image": "references/nta-site-4274d7aeca/page-1.webp",
+          "sources": [
+            {
+              "docId": "nta-site-4274d7aeca",
+              "page": 1
+            }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -1334,7 +1334,19 @@
           "end": "2024-12-31"
         }
       ],
-      "materials": []
+      "materials": [
+        {
+          "kind": "image",
+          "title": "תת\"ל 70/ב regulations (scanned) – cover page",
+          "image": "references/nta-site-2bc0450623/page-1.webp",
+          "sources": [
+            {
+              "docId": "nta-site-2bc0450623",
+              "page": 1
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "purple-bar-ilan",
@@ -1573,7 +1585,19 @@
           "end": "2022-09-30"
         }
       ],
-      "materials": []
+      "materials": [
+        {
+          "kind": "image",
+          "title": "תת\"ל 70/ב regulations (scanned) – cover page",
+          "image": "references/nta-site-2bc0450623/page-1.webp",
+          "sources": [
+            {
+              "docId": "nta-site-2bc0450623",
+              "page": 1
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "purple-east-yehud",
@@ -1924,7 +1948,30 @@
           "end": "2023-03-31"
         }
       ],
-      "materials": []
+      "materials": [
+        {
+          "kind": "image",
+          "title": "תת\"ל 70/ב regulations (scanned) – cover page",
+          "image": "references/nta-site-2bc0450623/page-1.webp",
+          "sources": [
+            {
+              "docId": "nta-site-2bc0450623",
+              "page": 1
+            }
+          ]
+        },
+        {
+          "kind": "image",
+          "title": "תת\"ל 70/ג regulations (scanned) – cover page",
+          "image": "references/nta-site-9cb9af6a31/page-1.webp",
+          "sources": [
+            {
+              "docId": "nta-site-9cb9af6a31",
+              "page": 1
+            }
+          ]
+        }
+      ]
     }
   ]
 }

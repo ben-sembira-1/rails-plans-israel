@@ -445,6 +445,17 @@
       "materials": [
         {
           "kind": "image",
+          "title": "תת\"ל 102 regulations (scanned) – cover page",
+          "image": "references/metro-july-2025-9e454e7ef5/page-1.webp",
+          "sources": [
+            {
+              "docId": "metro-july-2025-9e454e7ef5",
+              "page": 1
+            }
+          ]
+        },
+        {
+          "kind": "image",
           "title": "תת\"ל 102/ב regulations – cover page",
           "image": "references/mavat-99005512864-c0b642b333/page-1.webp",
           "sources": [

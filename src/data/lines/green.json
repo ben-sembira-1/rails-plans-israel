@@ -1675,7 +1675,19 @@
           "end": "2026-12-01"
         }
       ],
-      "materials": []
+      "materials": [
+        {
+          "kind": "image",
+          "title": "תת\"ל 71/ב regulations (scanned) – cover page",
+          "image": "references/nta-site-818be3f6d3/page-1.webp",
+          "sources": [
+            {
+              "docId": "nta-site-818be3f6d3",
+              "page": 1
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "green-north-herzliya",
@@ -2035,6 +2047,17 @@
         }
       ],
       "materials": [
+        {
+          "kind": "image",
+          "title": "תת\"ל 71/ג regulations (scanned) – cover page",
+          "image": "references/nta-site-1288e14d91/page-1.webp",
+          "sources": [
+            {
+              "docId": "nta-site-1288e14d91",
+              "page": 1
+            }
+          ]
+        },
         {
           "kind": "image",
           "title": "תת\"ל 71/ד – drivers' rooms along the Green line (explanatory note)",
@@ -2728,7 +2751,19 @@
           "end": "2026-06-01"
         }
       ],
-      "materials": []
+      "materials": [
+        {
+          "kind": "image",
+          "title": "תת\"ל 71/ג regulations (scanned) – cover page",
+          "image": "references/nta-site-1288e14d91/page-1.webp",
+          "sources": [
+            {
+              "docId": "nta-site-1288e14d91",
+              "page": 1
+            }
+          ]
+        }
+      ]
     }
   ]
 }
