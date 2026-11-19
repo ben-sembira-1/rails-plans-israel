@@ -95,7 +95,7 @@ def main() -> int:
                 out = TEXT_DIR / doc_id
                 out.mkdir(parents=True, exist_ok=True)
                 for index, page in enumerate(doc, start=1):
-                    (out / f"page-{index:03d}.txt").write_text(page.get_text(sort=True), encoding="utf-8")
+                    (out / f"page-{index:03d}.txt").write_text(page.get_text(), encoding="utf-8")
             pages = cited.get(doc_id, set())
             if -1 in pages:
                 pages = set(range(1, doc.page_count + 1))

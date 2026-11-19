@@ -24,6 +24,8 @@ const CollectionsSchema = z.object({
       kind: z.enum(['onedrive', 'url']),
       remoteRoot: z.string().optional(),
       folderUrl: z.url(),
+      /** Exact source URL per file (relative to the collection folder), when known. */
+      fileUrls: z.record(z.string(), z.url()).optional(),
     }),
   ),
 })
@@ -59,7 +61,8 @@ const { collections } = CollectionsSchema.parse(
 const previous = existsSync(MANIFEST)
   ? ManifestSchema.parse(JSON.parse(readFileSync(MANIFEST, 'utf8')))
   : undefined
-const previousBySha = new Map(previous?.documents.map((d) => [d.sha256, d]))
+const previousByKey = new Map(previous?.documents.map((d) => [`${d.sha256}:${d.path}`, d]))
+const usedIds = new Set<string>()
 
 const documents: ManifestDocument[] = []
 for (const collection of collections) {
@@ -72,13 +75,20 @@ for (const collection of collections) {
     const relative = path.relative(dir, file).split(path.sep).join('/')
     const repoPath = path.relative(ROOT, file).split(path.sep).join('/')
     const sha256 = createHash('sha256').update(readFileSync(file)).digest('hex')
-    const prior = previousBySha.get(sha256)
+    const prior = previousByKey.get(`${sha256}:${repoPath}`)
     const originalUrl =
-      collection.kind === 'onedrive' && collection.remoteRoot !== undefined
+      collection.fileUrls?.[relative] ??
+      (collection.kind === 'onedrive' && collection.remoteRoot !== undefined
         ? oneDriveFileUrl(collection.remoteRoot, relative)
-        : collection.folderUrl
+        : collection.folderUrl)
+    let id = prior?.id ?? `${collection.id}-${sha256.slice(0, 10)}`
+    if (usedIds.has(id)) {
+      // Identical content stored at another path: disambiguate with a hash of the path.
+      id = `${id}-${createHash('sha256').update(repoPath).digest('hex').slice(0, 6)}`
+    }
+    usedIds.add(id)
     documents.push({
-      id: prior?.id ?? `${collection.id}-${sha256.slice(0, 10)}`,
+      id,
       title: prior?.title ?? relative,
       collection: collection.id,
       path: repoPath,
