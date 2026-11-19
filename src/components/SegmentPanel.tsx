@@ -79,7 +79,7 @@ export function SegmentPanel({ segmentRef, time, onClose }: SegmentPanelProps): 
 
       <section>
         <h3>Timeline</h3>
-        <ol className="vtimeline">
+        <ol className="vtimeline" aria-label="Timeline">
           {buildEntries(segmentRef).map((entry) => (
             <li
               key={entry.key}

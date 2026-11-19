@@ -93,9 +93,11 @@ def main() -> int:
             entry["pages"] = doc.page_count
             if not args.skip_text:
                 out = TEXT_DIR / doc_id
-                out.mkdir(parents=True, exist_ok=True)
                 for index, page in enumerate(doc, start=1):
-                    (out / f"page-{index:03d}.txt").write_text(page.get_text(), encoding="utf-8")
+                    text = page.get_text()
+                    if text.strip():  # scanned pages have no text layer; skip them
+                        out.mkdir(parents=True, exist_ok=True)
+                        (out / f"page-{index:03d}.txt").write_text(text, encoding="utf-8")
             pages = cited.get(doc_id, set())
             if -1 in pages:
                 pages = set(range(1, doc.page_count + 1))

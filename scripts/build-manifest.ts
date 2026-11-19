@@ -26,6 +26,8 @@ const CollectionsSchema = z.object({
       folderUrl: z.url(),
       /** Exact source URL per file (relative to the collection folder), when known. */
       fileUrls: z.record(z.string(), z.url()).optional(),
+      /** Human-readable titles per file (relative to the collection folder). */
+      titles: z.record(z.string(), z.string()).optional(),
     }),
   ),
 })
@@ -89,7 +91,7 @@ for (const collection of collections) {
     usedIds.add(id)
     documents.push({
       id,
-      title: prior?.title ?? relative,
+      title: collection.titles?.[relative] ?? prior?.title ?? relative,
       collection: collection.id,
       path: repoPath,
       originalUrl,

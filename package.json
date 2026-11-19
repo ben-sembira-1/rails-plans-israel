@@ -20,7 +20,8 @@
     "test:watch": "vitest",
     "validate-data": "tsx scripts/validate-data.ts",
     "extract-references": ".venv/bin/python -I scripts/extract_references.py",
-    "build-manifest": "tsx scripts/build-manifest.ts"
+    "build-manifest": "tsx scripts/build-manifest.ts",
+    "build-data": ".venv/bin/python -m scripts.data_build.build_lines && prettier --write --log-level warn src/data/lines"
   },
   "dependencies": {
     "leaflet": "^1.9.4",

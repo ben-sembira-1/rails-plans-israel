@@ -24,19 +24,32 @@
         "schedules-2026-q3/metro-schedule-2026-07.xlsx": "https://www.nta.co.il/media/q12baivc/%D7%9C%D7%95%D7%96-%D7%9E%D7%98%D7%A8%D7%95-%D7%A4%D7%A8%D7%A1%D7%95%D7%9D-%D7%A2%D7%93%D7%9B%D7%A0%D7%99-%D7%99%D7%95%D7%9C%D7%99-26-29726-1.xlsx",
         "schedules-2026-q3/green-line-schedule-2026-q3.xlsx": "https://www.nta.co.il/media/svfkgvvu/%D7%A2%D7%95%D7%AA%D7%A7-%D7%A9%D7%9C-%D7%92%D7%90%D7%A0%D7%98-%D7%A9%D7%9E%D7%97%D7%95%D7%9F-%D7%A8%D7%91%D7%A2%D7%95%D7%9F-3-2026.xlsx",
         "schedules-2026-q3/purple-line-schedule-2026-q3.xlsx": "https://www.nta.co.il/media/5ycn2hls/%D7%92%D7%90%D7%A0%D7%98-%D7%A9%D7%9E%D7%97%D7%95%D7%9F-%D7%A8%D7%91%D7%A2%D7%95%D7%9F-3-%D7%A1%D7%95%D7%A4%D7%99.xlsx"
+      },
+      "titles": {
+        "schedules-2026-q3/metro-schedule-2026-07.xlsx": "NTA metro schedule (published July 2026)",
+        "schedules-2026-q3/green-line-schedule-2026-q3.xlsx": "NTA Green line schedule (Q3 2026)",
+        "schedules-2026-q3/purple-line-schedule-2026-q3.xlsx": "NTA Purple line schedule (Q3 2026)"
       }
     },
     {
       "id": "mavat-5005400010",
       "title": "Mavat – plan תתל/103/ג (M3 Or Yehuda depot)",
       "kind": "url",
-      "folderUrl": "https://mavat.iplan.gov.il/SV4/1/5005400010/310"
+      "folderUrl": "https://mavat.iplan.gov.il/SV4/1/5005400010/310",
+      "titles": {
+        "tatal-103-g-regulations.pdf": "תת\"ל 103/ג – plan regulations (Mavat)",
+        "tatal-103-g-drawing.pdf": "תת\"ל 103/ג – plan drawing (Mavat)"
+      }
     },
     {
       "id": "mavat-99005512864",
       "title": "Mavat – plan תתל/102/ב (M2 Segula depot, Petah Tikva)",
       "kind": "url",
-      "folderUrl": "https://mavat.iplan.gov.il/SV4/1/99005512864/310"
+      "folderUrl": "https://mavat.iplan.gov.il/SV4/1/99005512864/310",
+      "titles": {
+        "tatal-102-b-regulations.pdf": "תת\"ל 102/ב – plan regulations (Mavat)",
+        "tatal-102-b-drawing.pdf": "תת\"ל 102/ב – plan drawing (Mavat)"
+      }
     },
     {
       "id": "iplan-gis",
@@ -50,6 +63,14 @@
         "tatal-101.geojson": "https://ags.iplan.gov.il/arcgisiplan/rest/services/PlanningPublic/Xplan/MapServer/1/query?where=pl_number+LIKE+%27%D7%AA%D7%AA%D7%9C%2F+101%25%27&outFields=*&outSR=4326&f=geojson",
         "tatal-102.geojson": "https://ags.iplan.gov.il/arcgisiplan/rest/services/PlanningPublic/Xplan/MapServer/1/query?where=pl_number+LIKE+%27%D7%AA%D7%AA%D7%9C%2F+102%25%27&outFields=*&outSR=4326&f=geojson",
         "tatal-103.geojson": "https://ags.iplan.gov.il/arcgisiplan/rest/services/PlanningPublic/Xplan/MapServer/1/query?where=pl_number+LIKE+%27%D7%AA%D7%AA%D7%9C%2F+103%25%27&outFields=*&outSR=4326&f=geojson"
+      },
+      "titles": {
+        "tatal-70.geojson": "Planning Administration GIS – תת\"ל 70 plans (boundaries & dates)",
+        "tatal-71.geojson": "Planning Administration GIS – תת\"ל 71 plans (boundaries & dates)",
+        "tatal-72.geojson": "Planning Administration GIS – תת\"ל 72 plans (boundaries & dates)",
+        "tatal-101.geojson": "Planning Administration GIS – תת\"ל 101 plans (boundaries & dates)",
+        "tatal-102.geojson": "Planning Administration GIS – תת\"ל 102 plans (boundaries & dates)",
+        "tatal-103.geojson": "Planning Administration GIS – תת\"ל 103 plans (boundaries & dates)"
       }
     },
     {
@@ -58,7 +79,12 @@
       "kind": "url",
       "folderUrl": "https://www.openstreetmap.org/relation/9194005",
       "fileUrls": {
-        "lrt-relations-2026-11-19.json": "https://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%3Brelation%28id%3A2224880%2C9111705%2C9194005%29%3Bout%20geom%3B"
+        "lrt-relations-2026-11-19.json": "https://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%3Brelation%28id%3A2224880%2C9111705%2C9194005%29%3Bout%20geom%3B",
+        "streets-2026-11-19.json": "https://overpass-api.de/api/interpreter"
+      },
+      "titles": {
+        "lrt-relations-2026-11-19.json": "OpenStreetMap – light rail route relations (2026-11-19)",
+        "streets-2026-11-19.json": "OpenStreetMap – street geometry along the lines (2026-11-19)"
       }
     }
   ]
