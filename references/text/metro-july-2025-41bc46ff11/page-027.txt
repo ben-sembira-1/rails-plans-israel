@@ -1,0 +1,141 @@
+ 
+ מ. רוזנטל מהנדסים בע"מ 
+ 
+ 
+ תכנון וייעוץ הנדסי 
+ תשתיות מים, ביוב, ניקוז והידרולוגיה   
+  
+ 
+ 
+              
+ 
+   , גילון ד.נ. משגב20103
+      
+ 
+                                                                  
+          
+meir@rme.co.il
+                 
+                     
+      
+    :טל9580621
+ – 
+04
+                                    
+ 
+                                          
+RME-39118-depot-N.docx
+                                  
+ :פקס9580225
+ – 
+04
+        
+                      
+ עמוד27
+ 
+ מתוך31
+ 
+ 
+                     
+ :נייד7759909
+ - 
+054
+  
+ 
+ חישוב:מימדי מובל נחל גן חיים 
+ 
+HY-8 Culvert Analysis Report 
+Crossing Discharge Data 
+Discharge Selection Method: Specify Minimum, Design, and Maximum Flow 
+Minimum Flow: 5.0 cms 
+Design Flow: 34.3 cms 
+Maximum Flow: 40.0 cms 
+ 
+Table 1 - Summary of Culvert Flows at Crossing: Crossing 1 
+  
+Rating Curve Plot for Crossing: Crossing 1 
+Headwater Elevation 
+(m) 
+Total Discharge (cms) 
+Culvert 1 Discharge 
+(cms) 
+Roadway Discharge 
+(cms) 
+Iterations 
+  
+ 32.24 
+5.00 
+5.00 
+0.00 
+1 
+  
+ 32.45 
+8.50 
+8.50 
+0.00 
+1 
+  
+ 32.63 
+12.00 
+12.00 
+0.00 
+1 
+  
+ 32.80 
+15.50 
+15.50 
+0.00 
+1 
+  
+ 32.96 
+19.00 
+19.00 
+0.00 
+1 
+  
+ 33.11 
+22.50 
+22.50 
+0.00 
+1 
+  
+ 33.25 
+26.00 
+26.00 
+0.00 
+1 
+  
+ 33.39 
+29.50 
+29.50 
+0.00 
+1 
+  
+ 33.52 
+33.00 
+33.00 
+0.00 
+1 
+  
+ 33.57 
+34.30 
+34.30 
+0.00 
+1 
+  
+ 33.77 
+40.00 
+40.00 
+0.00 
+1 
+  
+ 35.45 
+71.91 
+71.91 
+0.00 
+Overtopping 
+  
+ נספח ביוב וניקוז דו"ח הידרולוגי לדפו18:13:47 22/10/2020 / ב101 /תכנית תתל
+3פס
+ק
+פ

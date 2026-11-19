@@ -1,9 +1,9 @@
-import type { ManifestDocument } from './schema.ts'
+import type { CitedDocument } from './schema.ts'
 
 const REPO = 'ben-sembira-1/rails-plans-israel'
 
 /** Direct link to the archived copy of a document (Git LFS content served by GitHub). */
-export function archivedFileUrl(doc: ManifestDocument): string {
+export function archivedFileUrl(doc: CitedDocument): string {
   const encodedPath = doc.path
     .split('/')
     .map((part) => encodeURIComponent(part))

@@ -24,6 +24,8 @@ repos:
         stages: [pre-commit]
       - id: check-added-large-files
         args: [--maxkb=1024, --enforce-all]
+        # The full manifest is metadata about every archived file; the site bundles only documents.json.
+        exclude: ^references/manifest\.json$
 
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.0

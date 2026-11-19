@@ -1,0 +1,895 @@
+23
+23
+23
+23
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+x
+L.S
+Kfar Saba
+T.B.M Launching site
+A=19,000sqm
+Launching to: Tchernichovsky (west)
+ תאה ראתה ר
+   תאה ראתה רתא
+(T.B.M  )חולתש
+SC-20  תאה ראתה רתא
+ M55
+ תאה ראתה רתא
+ M55
+   תאה ראתה רתא
+(T.B.M  )חולתש
+DEAD END, BUFFER STOP
+M1/PT-5
+M1/ST-5
+M1/SC-21
+ROAD 5443
+ROAD 55
+ROAD 5504
+HADEKEI St.
+HASHIKMA St.
+HASHIKMA St.
+436
+421
+228
+229
+247
+250
+237
+236
+200
+207
+213
+214
+219
+184
+185
+187
+222
+216
+215
+212
+211
+210
+208
+206
+205
+92
+3
+194
+95
+196
+197
+199
+202
+201
+203
+225
+227
+230
+244
+242
+241
+235
+232
+231
+220
+217
+221
+223
+224
+519
+439
+59
+43
+41
+121
+118
+123
+122
+119
+120
+117
+13
+1
+2
+3
+4
+5
+6
+8
+9
+431
+430
+428
+429
+433
+435
+434
+437
+432
+438
+427
+111
+113
+114
+110
+112
+107
+104
+105
+106
+109
+108
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+490
+491
+492
+494
+495
+493
+496
+497
+500
+499
+498
+532
+531
+529
+528
+527a
+532a
+531a
+528a
+530A
+529a
+534
+535
+517
+51
+545
+543
+542
+541
+538
+540
+518
+544
+505
+527
+489
+238
+42
+3
+115116
+186
+234
+233
+240
+239
+11
+21
+17
+20
+451
+14
+539
+507
+301
+305306
+302304307
+312
+315
+316317
+319320
+322
+327328
+508
+509
+510
+512
+348
+356
+365
+368 371
+372
+374
+377
+379 381
+384
+388
+390
+393
+396
+398
+401
+406
+404
+403
+400
+399
+397
+395
+392
+391
+389
+385
+382
+380
+514
+376
+375
+373
+370
+369
+367
+366
+363
+345
+344
+346
+329
+331
+335
+342
+330
+332
+333
+334
+336
+337
+339
+343
+347 349
+350
+351
+352
+353
+358
+359
+360
+354
+362
+364
+341
+378
+383
+386
+394
+402
+407
+513
+355
+511
+340
+638
+633
+634
+635
+636
+637
+639
+640
+641
+M2
+M6
+M10
+M0
+SC
+PT
+ST
+1026
+Raanana
+Kfar Saba
+Hod Hasharon
+Ramat
+Tel Aviv
+Hertzliya
+KEY PLAN (WITHOUT SCALE)
+Hasharon
+Tel Aviv
+M1/5 :
+SOKOLOV
+M1/3 :
+M1/48 :
+M1/46 :
+M1/51 :
+M1/47 :
+M1/54 :
+M1/14 :
+M1/18 :
+HAYARKON
+RAMAT AVIV
+RAANANA CENTER
+HERZELIYA CENTER
+BEN GURION
+ALKALAI
+KFAR SABA CENTER
+WEITZMAN
+TCHERNICHOVSKY
+RAMAT HADAR
+UNIVERSITY
+AVIV BASE
+HAAGANA
+NAMIR - PINKAS
+KIRYAT SHALOM
+HASHALOM
+YITZHAK SADE
+HABANIM
+TAAS WEST
+HASARAF
+JABOTINSKY
+RAANANA WEST RAIL STATION
+M1/2 :
+M1/4 :
+M1/12 :
+M1/15 :
+M1/19 :
+M1/9 :
+M1/8 :
+M1/11 :
+M1/13 :
+M1/20 :
+M1/49 :
+M1/52 :
+M1/53 :
+M1/7 :
+M1/6 :
+M1/10 :
+M1/17 :
+M1/50 :
+M1/1 :
+AKIVA
+HATIDHAR
+KFAR SABA EAST
+M1/55 :
+NATM Station
+Standart Station
+Special Station
+IDC
+At-grade Station
+TEL AVIV CENTER
+M1/16 :
+M1/0 :
+DEPOT
+GLILOT TRANSPORTATION HUB
+TAAS EAST
+HOLON JUNCTION
+M1/21 :
+1001
+1002
+1003
+1004
+1005
+1006
+1007
+1008
+1009
+1010
+1011
+ 1012
+ 1013
+M1/17
+M1/12
+M1/14
+M1/15
+M1/16
+M1/18
+M1/19
+M1/9
+M1/8
+M1/11
+M1/13
+M1/20
+M1/4
+M1/5
+M1/7
+M1/6
+M1/46
+M1/47
+M1/48
+M1/51
+M1/55
+M1/49
+M1/52
+M1/53
+M1/50
+M1/2
+M1/3
+M1/54
+M1/2
+M1/6
+M1/10
+M1/0
+M1/0
+M1/1
+M1/10
+M1/21
+1014 1015
+1016
+1017
+1018
+1019
+1020
+1021 10221023
+1024
+1025
+1026
+(23-26) 7  חלק- נספח שמירה על עצים בוגרים סקר עצים17:10:55 06/03/2025 / ג101 /תכנית תתל
+פ
+ש
+ע ע
+ע קס
+ק( 3
+6)

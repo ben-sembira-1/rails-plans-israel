@@ -129,6 +129,12 @@ export const ManifestDocumentSchema = z.strictObject({
 })
 export type ManifestDocument = z.infer<typeof ManifestDocumentSchema>
 
+/** The subset of manifest entries bundled with the site (src/data/documents.json). */
+export const CitedDocumentSchema = ManifestDocumentSchema.omit({ sha256: true, bytes: true })
+export type CitedDocument = z.infer<typeof CitedDocumentSchema>
+
+export const CitedDocumentsSchema = z.strictObject({ documents: z.array(CitedDocumentSchema) })
+
 export const ManifestSchema = z.strictObject({
   updatedAt: z.iso.date(),
   documents: z.array(ManifestDocumentSchema),

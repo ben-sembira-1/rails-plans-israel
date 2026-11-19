@@ -1,9 +1,9 @@
-import { findDocument, findSegment, lines, manifest } from './index.ts'
+import { documents, findDocument, findSegment, lines } from './index.ts'
 
 describe('bundled data', () => {
   it('loads every line', () => {
     expect(lines.length).toBeGreaterThan(0)
-    expect(manifest.documents.length).toBeGreaterThan(0)
+    expect(documents.length).toBeGreaterThan(0)
   })
 
   it('cites only documents that exist in the manifest', () => {

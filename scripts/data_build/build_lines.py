@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -908,12 +909,26 @@ def brown() -> None:
     )
 
 
+def write_cited_documents() -> None:
+    """Write src/data/documents.json: the manifest entries the site actually cites."""
+    cited: set[str] = set()
+    for file in OUT.glob("*.json"):
+        if file.name != "documents.json":
+            cited.update(re.findall(r'"docId": "([^"]+)"', file.read_text(encoding="utf-8")))
+    keep = ("id", "title", "collection", "path", "originalUrl", "retrievedAt", "pages")
+    docs = [{k: d[k] for k in keep if k in d} for d in MANIFEST["documents"] if d["id"] in cited]
+    target = OUT.parent / "documents.json"
+    target.write_text(json.dumps({"documents": docs}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"cited documents: {len(docs)}")
+
+
 def main() -> None:
     """Build all lines."""
     green()
     purple()
     metro()
     brown()
+    write_cited_documents()
 
 
 if __name__ == "__main__":

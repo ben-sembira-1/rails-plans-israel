@@ -1,0 +1,71 @@
+ מ. רוזנטל מהנדסים בע"מ 
+ 
+ 
+ תכנון וייעוץ הנדסי 
+ תשתיות מים, ביוב, ניקוז והידרולוגיה  
+ 
+   
+ 
+ 
+ 
+ __________
+ 
+    
+ 
+ 
+ 
+              
+ 
+   , גילון ד.נ. משגב20103
+ 
+     
+ 
+                                                                  
+          
+meir@rme.co.il
+                                      
+  
+    :טל9580621
+ – 
+04
+                                    
+ 
+                                          
+RME-39118-depot-N.docx
+                              
+ :פקס9580225
+ – 
+04
+                              
+ עמוד30
+ 
+ מתוך31
+ 
+ 
+                     
+ :נייד7759909
+ - 
+054
+  
+Water Surface Profile Plot for Culvert: Culvert 1 
+ 
+Site Data - Culvert 1 
+Site Data Option:  Culvert Invert Data 
+Inlet Station:  0.00 m 
+Inlet Elevation:  31.75 m 
+Outlet Station:  316.00 m 
+Outlet Elevation:  31.30 m 
+Number of Barrels:  3 
+Culvert Data Summary - Culvert 1 
+Barrel Shape:  Concrete Box 
+Barrel Span:  3500.00 mm 
+Barrel Rise:  2100.00 mm 
+Barrel Material:  Concrete 
+Embedment:  0.00 mm 
+Barrel Manning's n:  0.0120 
+Culvert Type:  Straight 
+Inlet Configuration:  Square Edge (90ן¿½) Headwall 
+Inlet Depression:  None 
+ 
+ נספח ביוב וניקוז דו"ח הידרולוגי לדפו18:13:47 22/10/2020 / ב101 /תכנית תתל
+13:47 ופדל  גולורד ה ח וד זוק נו בו ב חפסנ

@@ -8,7 +8,12 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { LineSchema, ManifestSchema, type SourceRef } from '../src/data/schema.ts'
+import {
+  CitedDocumentsSchema,
+  LineSchema,
+  ManifestSchema,
+  type SourceRef,
+} from '../src/data/schema.ts'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const errors: string[] = []
@@ -26,6 +31,17 @@ for (const doc of manifest.documents) {
   }
 }
 
+const bundled = CitedDocumentsSchema.parse(
+  JSON.parse(readFileSync(path.join(ROOT, 'src', 'data', 'documents.json'), 'utf8')),
+)
+const bundledIds = new Set(bundled.documents.map((d) => d.id))
+for (const doc of bundled.documents) {
+  const full = docs.get(doc.id)
+  if (full?.path !== doc.path || full.originalUrl !== doc.originalUrl) {
+    errors.push(`documents.json: ${doc.id} does not match the manifest (run npm run build-data)`)
+  }
+}
+
 function checkSources(where: string, value: unknown): void {
   if (Array.isArray(value)) {
     for (const [index, item] of value.entries()) {
@@ -40,6 +56,11 @@ function checkSources(where: string, value: unknown): void {
   if (typeof record['docId'] === 'string') {
     const source = record as unknown as SourceRef
     const doc = docs.get(source.docId)
+    if (!bundledIds.has(source.docId)) {
+      errors.push(
+        `${where}: docId "${source.docId}" missing from documents.json (run npm run build-data)`,
+      )
+    }
     if (doc === undefined) {
       errors.push(`${where}: unknown docId "${source.docId}"`)
     } else if (source.page !== undefined && doc.pages !== undefined && source.page > doc.pages) {

@@ -1,11 +1,9 @@
-import manifestJson from '../../references/manifest.json'
-
+import documentsJson from './documents.json'
 import {
   LineSchema,
-  ManifestSchema,
+  CitedDocumentsSchema,
+  type CitedDocument,
   type Line,
-  type Manifest,
-  type ManifestDocument,
   type Segment,
 } from './schema.ts'
 
@@ -21,11 +19,13 @@ export const lines: readonly Line[] = Object.entries(lineModules)
     return parsed.data
   })
 
-export const manifest: Manifest = ManifestSchema.parse(manifestJson)
+/** Documents cited by the bundled data (a subset of references/manifest.json). */
+export const documents: readonly CitedDocument[] =
+  CitedDocumentsSchema.parse(documentsJson).documents
 
-const documentsById = new Map(manifest.documents.map((d) => [d.id, d]))
+const documentsById = new Map(documents.map((d) => [d.id, d]))
 
-export function findDocument(docId: string): ManifestDocument | undefined {
+export function findDocument(docId: string): CitedDocument | undefined {
   return documentsById.get(docId)
 }
 
