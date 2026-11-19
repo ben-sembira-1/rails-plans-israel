@@ -1,0 +1,8 @@
+node_modules
+dist
+coverage
+references/raw
+public/references
+package-lock.json
+.incoming
+.venv

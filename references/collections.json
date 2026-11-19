@@ -1,0 +1,31 @@
+{
+  "$comment": "Where each folder under references/raw/ came from. Used by scripts/build-manifest.ts to build originalUrl for every file.",
+  "collections": [
+    {
+      "id": "nta-site",
+      "title": "NTA public OneDrive – אתר נתע",
+      "kind": "onedrive",
+      "remoteRoot": "/personal/onedrive_nta_co_il/Documents/אתר נתע",
+      "folderUrl": "https://ntaisrael-my.sharepoint.com/personal/onedrive_nta_co_il/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fonedrive%5Fnta%5Fco%5Fil%2FDocuments%2F%D7%90%D7%AA%D7%A8%20%D7%A0%D7%AA%D7%A2&viewid=f12ba950%2D38fa%2D438a%2D98c9%2D82c98a45d90a&ga=1"
+    },
+    {
+      "id": "metro-july-2025",
+      "title": "NTA public OneDrive – מטרו יולי 2025",
+      "kind": "onedrive",
+      "remoteRoot": "/personal/onedrive_nta_co_il/Documents/מטרו יולי 2025",
+      "folderUrl": "https://ntaisrael-my.sharepoint.com/personal/onedrive_nta_co_il/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fonedrive%5Fnta%5Fco%5Fil%2FDocuments%2F%D7%9E%D7%98%D7%A8%D7%95%20%D7%99%D7%95%D7%9C%D7%99%202025&ga=1"
+    },
+    {
+      "id": "mavat-5005400010",
+      "title": "Mavat – plan תתל/103/ג (M3 Or Yehuda depot)",
+      "kind": "url",
+      "folderUrl": "https://mavat.iplan.gov.il/SV4/1/5005400010/310"
+    },
+    {
+      "id": "mavat-99005512864",
+      "title": "Mavat – plan 99005512864",
+      "kind": "url",
+      "folderUrl": "https://mavat.iplan.gov.il/SV4/1/99005512864/310"
+    }
+  ]
+}

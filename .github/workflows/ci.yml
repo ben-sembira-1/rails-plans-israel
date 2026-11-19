@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          lfs: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - name: pre-commit (all hooks, all files)
+        uses: pre-commit/action@v3.0.1
+        env:
+          SKIP: no-commit-to-branch
+        with:
+          extra_args: --all-files
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run validate-data
+      - run: npm run build

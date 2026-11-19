@@ -1,0 +1,362 @@
+:root {
+  --bg: #f6f7f9;
+  --surface: #fff;
+  --text: #1c2330;
+  --muted: #5d6675;
+  --border: #d9dde3;
+  --accent: #1b2a4a;
+  --planned: #9aa0a6;
+
+  color-scheme: light dark;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    'Noto Sans Hebrew',
+    sans-serif;
+  line-height: 1.45;
+  color: var(--text);
+  background: var(--bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12161d;
+    --surface: #1b212b;
+    --text: #e6e9ee;
+    --muted: #9aa3b2;
+    --border: #2d3542;
+    --accent: #8fb3ff;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+}
+
+a {
+  color: var(--accent);
+}
+
+.app {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100%;
+}
+
+.app__main {
+  position: relative;
+  min-height: 0;
+}
+
+.map {
+  position: absolute;
+  inset: 0;
+}
+
+/* Header */
+.header {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.header__title {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.header__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-inline-start: auto;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.header__badge {
+  padding: 0.1rem 0.5rem;
+  font-weight: 600;
+  color: #fff;
+  background: #1b2a4a;
+  border-radius: 999px;
+}
+
+/* Timeline */
+.timeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.6rem 1rem;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+
+.timeline__slider {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.timeline__date {
+  min-width: 6.5rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.timeline button,
+.timeline select {
+  padding: 0.3rem 0.8rem;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.timeline__play[aria-pressed='true'] {
+  color: #fff;
+  background: var(--accent);
+}
+
+/* Legend */
+.legend {
+  position: absolute;
+  inset-block-start: 0.75rem;
+  inset-inline-start: 3.5rem;
+  z-index: 500;
+  max-width: 16rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.legend ul {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.legend__status {
+  padding-top: 0.4rem;
+  margin-top: 0.4rem !important;
+  border-top: 1px solid var(--border);
+}
+
+.legend__swatch,
+.legend__sample {
+  display: inline-block;
+  width: 1.6rem;
+  height: 0.35rem;
+  margin-inline-end: 0.4rem;
+  vertical-align: middle;
+  border-radius: 2px;
+}
+
+.legend__sample--operational {
+  background: var(--text);
+}
+
+.legend__sample--construction {
+  background: repeating-linear-gradient(90deg, var(--text) 0 2px, transparent 2px 6px);
+  opacity: 0.6;
+}
+
+.legend__sample--planned {
+  background: repeating-linear-gradient(90deg, var(--planned) 0 6px, transparent 6px 12px);
+}
+
+/* Side panel */
+.panel {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  z-index: 600;
+  width: min(30rem, 100%);
+  padding: 0 1rem 2rem;
+  overflow-y: auto;
+  background: var(--surface);
+  border-inline-start: 1px solid var(--border);
+  box-shadow: -4px 0 16px rgb(0 0 0 / 15%);
+}
+
+.panel h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 0.95rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.panel__header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  background: var(--surface);
+  border-bottom: 4px solid;
+}
+
+.panel__line {
+  margin: 0;
+  font-weight: 700;
+}
+
+.panel__title {
+  margin: 0.15rem 0;
+  font-size: 1.2rem;
+}
+
+.panel__status {
+  display: inline-block;
+  padding: 0.05rem 0.5rem;
+  margin: 0;
+  font-size: 0.8rem;
+  text-transform: capitalize;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.panel__close {
+  align-self: start;
+  padding: 0 0.5rem;
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--text);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+/* Vertical timeline */
+.vtimeline {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  border-inline-start: 2px solid var(--border);
+}
+
+.vtimeline__item {
+  position: relative;
+  display: grid;
+  gap: 0.15rem;
+  padding: 0 0 0.9rem 1rem;
+  opacity: 0.7;
+}
+
+.vtimeline__item::before {
+  position: absolute;
+  inset-block-start: 0.35rem;
+  inset-inline-start: -0.4rem;
+  width: 0.7rem;
+  height: 0.7rem;
+  content: '';
+  background: var(--surface);
+  border: 2px solid var(--planned);
+  border-radius: 50%;
+}
+
+.vtimeline__item--past {
+  opacity: 1;
+}
+
+.vtimeline__item--past::before {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.vtimeline__when {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* Citations */
+.citations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.citations__label {
+  font-weight: 600;
+}
+
+.citation__quote {
+  display: block;
+  font-style: italic;
+  unicode-bidi: plaintext;
+}
+
+.citation__note {
+  display: block;
+}
+
+.citation--missing {
+  color: #c62828;
+}
+
+/* Materials */
+.material {
+  padding: 0.6rem;
+  margin: 0 0 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.material__title {
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+}
+
+.material__image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+.material__body {
+  margin: 0.35rem 0;
+  white-space: pre-line;
+  unicode-bidi: plaintext;
+}
+
+.stations {
+  padding-inline-start: 1.1rem;
+  margin: 0;
+}
+
+@media (width <= 640px) {
+  .header__title {
+    font-size: 1rem;
+  }
+
+  .legend {
+    display: none;
+  }
+}

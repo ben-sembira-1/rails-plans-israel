@@ -1,0 +1,25 @@
+name: version-label
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  version-label:
+    name: version-label
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require exactly one version label
+        env:
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          filter='[.[] | select(test("^version:(patch|minor|major)$"))] | length'
+          count=$(jq "${filter}" <<< "${LABELS}")
+          if [ "${count}" -ne 1 ]; then
+            echo "::error::Add exactly one label: version:patch, version:minor or version:major (found ${count})."
+            exit 1
+          fi
+          echo "Version label OK: $(jq -r '.[] | select(startswith("version:"))' <<< "${LABELS}")"
