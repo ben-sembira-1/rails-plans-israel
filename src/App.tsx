@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Legend } from './components/Legend.tsx';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { MapView } from './components/MapView.tsx';
-import { TimelineDock } from './components/TimelineDock.tsx';
+import { SidePanel } from './components/SidePanel.tsx';
+import { TimelineBar } from './components/TimelineBar.tsx';
 import { TopBar } from './components/TopBar.tsx';
 import type { Network } from './data/schema.ts';
 import { worksEvents } from './domain/events.ts';
+import { markersFor } from './domain/markers.ts';
 import type { LayerId } from './domain/lines.ts';
 import { nearestStepIndex, STEPS, TODAY } from './domain/time.ts';
 
@@ -22,7 +23,10 @@ export interface AppProps {
 export function App({ network, initialTime, onTimeChange, headerActions, page }: AppProps) {
   const [time, setTime] = useState(() => STEPS[nearestStepIndex(initialTime ?? TODAY)] ?? TODAY);
   const [hidden, setHidden] = useState<ReadonlySet<LayerId>>(new Set());
+  const [panelOpen, setPanelOpen] = useState(false);
+  const panelId = useId();
   const events = useMemo(() => worksEvents(network.sections, network.sites), [network]);
+  const markers = useMemo(() => markersFor(events), [events]);
 
   useEffect(() => {
     onTimeChange?.(time);
@@ -42,17 +46,34 @@ export function App({ network, initialTime, onTimeChange, headerActions, page }:
       <TopBar time={time} actions={headerActions} />
       {page ?? (
         <>
-          <div className="map-area">
-            <MapView network={network} time={time} hidden={hidden} />
-            <Legend hidden={hidden} onToggle={toggleLayer} />
+          <div className="workspace">
+            <div className="side-column">
+              <TimelineBar
+                time={time}
+                markers={markers}
+                onTimeChange={setTime}
+                panelOpen={panelOpen}
+                panelId={panelId}
+                onTogglePanel={() => {
+                  setPanelOpen((o) => !o);
+                }}
+              />
+              <SidePanel
+                id={panelId}
+                open={panelOpen}
+                time={time}
+                events={events}
+                sections={network.sections}
+                sites={network.sites}
+                hidden={hidden}
+                onTimeChange={setTime}
+                onToggleLayer={toggleLayer}
+              />
+            </div>
+            <div className="map-area">
+              <MapView network={network} time={time} hidden={hidden} />
+            </div>
           </div>
-          <TimelineDock
-            time={time}
-            events={events}
-            sections={network.sections}
-            sites={network.sites}
-            onTimeChange={setTime}
-          />
         </>
       )}
     </div>

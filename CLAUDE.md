@@ -13,3 +13,8 @@ Guidance for AI agents working in this repository.
 - react-leaflet: `pathOptions` changes go through Leaflet's merging `setStyle`, so always set every style key
   that can change (e.g. `dashArray: undefined` for solid). Options like `pane` and a Tooltip's `className` are
   read only on creation; change the React `key` to recreate the layer when they change.
+- Every PR description includes screenshots of the change from a local test run (desktop, and phone width ~390 px
+  when the UI is affected; for non-visual changes, a screenshot of the relevant local run, e.g. the tests).
+  `gh` can't upload images, so commit them to the `pr-assets` branch under `pr-<number>/` (a separate orphan
+  branch, e.g. via `git worktree`; never force-push it) and embed them with
+  `https://raw.githubusercontent.com/ben-sembira-1/rails-plans-israel/pr-assets/pr-<number>/<file>`.

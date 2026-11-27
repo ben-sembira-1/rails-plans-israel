@@ -88,13 +88,47 @@ describe('App', () => {
     expect(purple).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('opens and closes the events panel (phone layout)', async () => {
+  it('jumps back to today from the "today" marker', async () => {
+    render(<App network={NETWORK} initialTime={2030} />);
+    const today = screen.getByRole('button', { name: '2026Q4 · היום' });
+    expect(today).toHaveClass('today');
+    expect(today).toHaveAttribute('tabindex', '0');
+    await userEvent.click(today);
+    expect(screen.getByTestId('map')).toHaveAttribute('data-time', '2026.75');
+    expect(today).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('opens and closes the side panel (phone layout)', async () => {
     render(<App network={NETWORK} />);
-    const toggle = screen.getByRole('button', { name: /אירועים ופרטים/ });
+    const toggle = screen.getByRole('button', { name: /מקרא ואירועים/ });
+    const panel = screen.getByRole('complementary', { name: 'לוח בקרה' });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(toggle).toHaveAttribute('aria-controls', panel.id);
+    expect(panel).not.toHaveClass('open');
     await userEvent.click(toggle);
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByRole('region', { name: 'ציר זמן' })).toHaveClass('expanded');
+    expect(panel).toHaveClass('open');
+  });
+
+  it('keeps previous and next together, before the bar', () => {
+    render(<App network={NETWORK} />);
+    const steps = screen.getByRole('group', { name: 'מעבר בין אירועים' });
+    expect(
+      within(steps)
+        .getAllByRole('button')
+        .map((b) => b.getAttribute('aria-label')),
+    ).toEqual(['האירוע הקודם', 'האירוע הבא']);
+    const timeline = screen.getByRole('region', { name: 'ציר זמן' });
+    const panel = screen.getByRole('complementary', { name: 'לוח בקרה' });
+    // The timeline comes before the side panel and the map.
+    expect(timeline.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('documents how to read the map in the side panel', () => {
+    render(<App network={NETWORK} />);
+    const docs = screen.getByRole('region', { name: 'איך לקרוא את המפה' });
+    expect(within(docs).getByText(/קו מלא – פועל/)).toBeInTheDocument();
+    expect(within(docs).getByText(/מקורות:/)).toBeInTheDocument();
   });
 
   it('hides a line from the legend', async () => {

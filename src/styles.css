@@ -3,7 +3,6 @@
   --navy-2: #16234a;
   --ink: #1d1d1f;
   --muted: #5f6368;
-  --panel: rgb(255 255 255 / 96%);
   --border: #dadce0;
   --accent: #1a73e8;
   --accent-ink: #174ea6;
@@ -46,65 +45,134 @@ body {
   font-family: Heebo, Arial, sans-serif;
 }
 
-.panel {
-  position: absolute;
-  z-index: 1000;
-  background: var(--panel);
-  border-radius: 14px;
-  box-shadow: 0 2px 14px rgb(0 0 0 / 18%);
-  padding: 12px 16px;
-}
-
-/* Layout: map on top, timeline dock at the bottom */
+/* Layout: top strip, then the side column (timeline + panel, on the left) and the map. */
 .app {
   display: flex;
   flex-direction: column;
 }
 
-.map-area {
-  position: relative;
-  flex: 1;
+.side-column {
+  flex: none;
+  width: 380px;
+  display: flex;
+  flex-direction: column;
   min-height: 0;
+  background: #fbfcfe;
+  border-right: 1px solid #e3e7ef;
+  z-index: 1050;
 }
 
-.dock {
+.timeline {
   --thumb: 18px;
 
   position: relative;
-  z-index: 1000;
   flex: none;
   background: #fff;
-  border-top: 1px solid #e3e7ef;
-  box-shadow: 0 -6px 24px rgb(11 21 48 / 10%);
-  padding: 4px 20px 10px;
-  max-height: 45vh;
-  overflow: auto;
+  border-bottom: 1px solid #e3e7ef;
+  box-shadow: 0 6px 18px rgb(11 21 48 / 6%);
+  padding: 10px 18px 4px;
 }
 
-.dock-head {
+.timeline-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
 }
 
-.dock h1 {
-  font-size: 15px;
-  margin: 0;
+.steps {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+
+.workspace {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+
+  /* RTL: row-reverse puts the panel (first child) on the left. */
+  flex-direction: row-reverse;
+}
+
+.map-area {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.side-panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: #fbfcfe;
+  padding: 6px 18px 18px;
+  font-size: 13.5px;
+}
+
+.side-section {
+  padding: 12px 0;
+  border-bottom: 1px solid #eceff4;
+}
+
+.side-section:last-child {
+  border-bottom: none;
+}
+
+.side-section h2 {
+  font-size: 12px;
   font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  margin: 0 0 8px;
 }
 
-.version {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--muted);
-  background: var(--chip);
-  border-radius: 6px;
-  padding: 1px 6px;
+.milestone-text {
+  margin: 0 0 6px;
+}
+
+.docs {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  line-height: 1.5;
+  color: #3c4043;
+}
+
+.docs li {
+  margin-bottom: 6px;
+}
+
+.docs .zone {
+  display: inline-block;
   vertical-align: middle;
 }
 
-.dock-toggle {
+.line-sample {
+  display: inline-block;
+  width: 30px;
+  height: 0;
+  vertical-align: middle;
+  border-top: 4px solid #8e2d9e;
+  margin-left: 4px;
+}
+
+.line-sample.dashed {
+  border-top-style: dashed;
+}
+
+.line-sample.dotted {
+  border-top-style: dotted;
+  opacity: 0.6;
+}
+
+.sources {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 8px 0 0;
+}
+
+.panel-toggle {
   display: none;
   font:
     500 13px Heebo,
@@ -117,18 +185,6 @@ body {
   padding: 4px 12px;
   cursor: pointer;
   flex: none;
-}
-
-.hint {
-  font-size: 12px;
-  color: var(--muted);
-  margin: 6px 0 0;
-}
-
-.dock-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
 }
 
 .step-btn {
@@ -158,7 +214,7 @@ input:focus-visible {
 .now {
   font-weight: 700;
   font-size: 14px;
-  min-width: 64px;
+  min-width: 56px;
   text-align: center;
   color: var(--accent-ink);
   flex: none;
@@ -167,9 +223,8 @@ input:focus-visible {
 /* The bar: a native range input with event markers laid over its track. */
 .track {
   position: relative;
-  flex: 1;
-  min-width: 0;
   height: 64px;
+  margin: 0 2px;
   direction: rtl;
 }
 
@@ -238,38 +293,58 @@ input:focus-visible {
   top: 14px;
 }
 
+.marker.start .marker-label {
+  right: -6px;
+  transform: none;
+}
+
+.marker.end .marker-label {
+  right: auto;
+  left: -6px;
+  transform: none;
+}
+
+/* Today: an orange ring with its own label, always clickable. */
+.marker.today {
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border: 3px solid #e8590c;
+  z-index: 2;
+}
+
+.marker.today .marker-label {
+  color: #c94a00;
+  font-weight: 700;
+}
+
+.marker.today.on {
+  background: #e8590c;
+  box-shadow: 0 0 0 3px rgb(232 89 12 / 30%);
+}
+
+.marker.today.on .marker-label {
+  color: #c94a00;
+}
+
 .marker.on .marker-label {
   color: var(--accent);
   font-weight: 700;
 }
 
-.caption-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
 .caption {
-  font-weight: 700;
-  font-size: 14px;
-  margin-top: 2px;
+  flex: 1;
   min-width: 0;
-}
-
-.jump-lists {
-  display: none;
-}
-
-.row-label {
-  font-size: 11.5px;
-  color: var(--muted);
-  margin: 8px 0 3px;
+  font-weight: 700;
+  font-size: 13.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .milestones {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
 }
 
@@ -333,40 +408,13 @@ input:focus-visible {
   font-size: 12.5px;
 }
 
-/* Legend */
-.legend {
-  bottom: 24px;
-  left: 10px;
-  font-size: 13px;
-  padding: 10px 14px;
-  max-width: calc(100% - 24px);
-}
-
-.legend summary {
-  cursor: pointer;
-  font-weight: 500;
-  margin-bottom: 4px;
-}
-
+/* Layer toggles */
 .legend label {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 3px 0;
   cursor: pointer;
-  white-space: nowrap;
-}
-
-.legend small {
-  display: block;
-  color: var(--muted);
-  margin: 0 0 6px;
-  max-width: 260px;
-  line-height: 1.4;
-}
-
-.legend .notes {
-  margin-top: 6px;
 }
 
 .swatch {
@@ -559,22 +607,48 @@ input:focus-visible {
   font-size: 11px;
 }
 
-/* Phone: only the bar and the current status by default; events, milestones and details open on demand. */
-@media (width <= 600px) {
-  .dock {
-    padding: 6px 10px 8px;
-    max-height: 70vh;
+/* Narrow screens: the panel opens on demand, over the map, under the timeline. */
+@media (width <= 800px) {
+  .workspace {
+    flex-direction: column;
   }
 
-  .dock h1 {
-    font-size: 13px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .side-column {
+    position: relative;
+    width: auto;
+    border-right: none;
   }
 
-  .dock-toggle {
+  .timeline {
+    padding: 6px 10px 2px;
+    box-shadow: 0 6px 24px rgb(11 21 48 / 10%);
+  }
+
+  .panel-toggle {
     display: block;
+  }
+
+  .side-panel {
+    display: none;
+    position: absolute;
+    inset: 100% 0 auto;
+    z-index: 1040;
+    width: auto;
+    max-height: 65vh;
+    border-right: none;
+    border-bottom: 1px solid #e3e7ef;
+    box-shadow: 0 10px 30px rgb(11 21 48 / 20%);
+  }
+
+  .side-panel.open {
+    display: block;
+  }
+}
+
+/* Phone: a compact bar. */
+@media (width <= 600px) {
+  .timeline-row {
+    gap: 8px;
   }
 
   .track {
@@ -606,34 +680,38 @@ input:focus-visible {
     display: none;
   }
 
+  /* Today stays tappable, with a finger-sized hit area. */
+  .marker.today {
+    width: 12px;
+    height: 12px;
+    border-width: 2px;
+    pointer-events: auto;
+  }
+
+  .marker.today::before {
+    content: '';
+    position: absolute;
+    inset: -12px;
+  }
+
+  .marker.today .marker-label {
+    display: block;
+    bottom: 8px;
+    font-size: 10.5px;
+  }
+
   .step-btn {
-    width: 40px;
-    height: 40px;
+    width: 38px;
+    height: 38px;
+  }
+
+  .now {
+    min-width: 52px;
+    font-size: 13px;
   }
 
   .caption {
     font-size: 13px;
-  }
-
-  .dock-more {
-    display: none;
-  }
-
-  .dock.expanded .dock-more {
-    display: block;
-  }
-
-  .jump-lists {
-    display: block;
-  }
-
-  .legend {
-    font-size: 12px;
-    bottom: 10px;
-  }
-
-  .legend small {
-    display: none;
   }
 }
 
