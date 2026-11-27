@@ -12,13 +12,13 @@ point in time:
 
 ## Lines
 
-| Line             | Type       | Shown as                                                              |
-| ---------------- | ---------- | --------------------------------------------------------------------- |
-| Red              | Light rail | In service since 2023Q3; Rishon LeZion extension planned (no date)    |
-| Purple           | Light rail | Under works; whole line opens 2028Q2                                  |
-| Green            | Light rail | Under works; south opens 2028Q4, north and branches 2030              |
-| M1, M2, M3       | Metro      | Preparatory sites now, heavy works from 2029, stage A opening ~2037   |
-| Israel Railways  | Heavy rail | In service throughout (context layer, loaded live from OpenStreetMap) |
+| Line            | Type       | Shown as                                                              |
+| --------------- | ---------- | --------------------------------------------------------------------- |
+| Red             | Light rail | In service since 2023Q3; Rishon LeZion extension planned (no date)    |
+| Purple          | Light rail | Under works; whole line opens 2028Q2                                  |
+| Green           | Light rail | Under works; south opens 2028Q4, north and branches 2030              |
+| M1, M2, M3      | Metro      | Preparatory sites now, heavy works from 2029, stage A opening ~2037   |
+| Israel Railways | Heavy rail | In service throughout (context layer, loaded live from OpenStreetMap) |
 
 ## Requirements
 
