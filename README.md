@@ -13,8 +13,8 @@ See [docs/TARGET.md](docs/TARGET.md) for what the site shows and why.
   **under works** (dashed, inside a work zone) or **planned** (dotted).
 - **Work zones** to real scale: a dark band up to 20 m from the line and a light band to 100 m; orange for heavy
   works, yellow for light works. Metro preparatory sites are circular zones until the line-wide works start (2029).
-- **Timeline** at the top of the side panel: quarterly until 2029Q4, yearly from 2030, then "no announced date"
-  (the full network). Previous/next event buttons, a clickable "today" marker, and every event as a marker on the
+- **Timeline** at the top of the side panel: quarterly until 3 years from today (2029Q4), then yearly, then "no
+  announced date" (the full network). Previous/next buttons move one quarter (one year on the yearly part), a clickable "today" marker, and every event as a marker on the
   bar with the main milestones bigger.
 - **Places of interest**: search a place on the Google map (or click one), save it, add comments, and open
   Google's details (photos, opening hours, reviews). Saved per user in Firebase.

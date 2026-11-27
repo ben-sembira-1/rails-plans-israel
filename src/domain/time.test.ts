@@ -1,7 +1,19 @@
-import { formatTime, nearestStepIndex, NO_DATE, snap, STEPS, stepBefore } from './time.ts';
+import {
+  adjacentSteps,
+  formatTime,
+  nearestStepIndex,
+  NO_DATE,
+  snap,
+  STEPS,
+  stepBefore,
+  TODAY,
+  YEARLY_FROM,
+} from './time.ts';
 
 describe('timeline steps', () => {
-  it('moves by quarter until 2029Q4, then by full year, then "no date"', () => {
+  it('moves by quarter until 3 years from today (2029Q4), then by full year, then "no date"', () => {
+    expect(TODAY).toBe(2026.75);
+    expect(YEARLY_FROM).toBe(2030);
     expect(STEPS[0]).toBe(2023.5);
     expect(STEPS).toContain(2029.75);
     expect(STEPS).not.toContain(2030.25);
@@ -51,5 +63,15 @@ describe('nearestStepIndex', () => {
   it('finds the closest step', () => {
     expect(STEPS[nearestStepIndex(2026.8)]).toBe(2026.75);
     expect(STEPS[nearestStepIndex(NO_DATE)]).toBe(NO_DATE);
+  });
+});
+
+describe('adjacentSteps', () => {
+  it('moves one quarter, then one year, and stops at the ends', () => {
+    expect(adjacentSteps(TODAY)).toEqual({ prev: 2026.5, next: 2027 });
+    expect(adjacentSteps(2029.75)).toEqual({ prev: 2029.5, next: 2030 });
+    expect(adjacentSteps(2030)).toEqual({ prev: 2029.75, next: 2031 });
+    expect(adjacentSteps(STEPS[0] ?? 0).prev).toBeUndefined();
+    expect(adjacentSteps(NO_DATE)).toEqual({ prev: 2037, next: undefined });
   });
 });

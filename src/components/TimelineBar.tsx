@@ -1,6 +1,6 @@
 import { eventLabel, milestoneAt } from '../domain/events.ts';
 import { markerPosition, type Marker } from '../domain/markers.ts';
-import { formatTime, nearestStepIndex, STEPS } from '../domain/time.ts';
+import { adjacentSteps, formatTime, nearestStepIndex, STEPS } from '../domain/time.ts';
 
 export interface TimelineBarProps {
   readonly time: number;
@@ -74,8 +74,10 @@ export function TimelineBar({
   panelId,
   onTogglePanel,
 }: TimelineBarProps) {
-  const prev = markers.findLast((m) => m.time < time);
-  const next = markers.find((m) => m.time > time);
+  // Previous / next move one step of the grid (a quarter, or a year from YEARLY_FROM); events are only markers.
+  const { prev, next } = adjacentSteps(time);
+  const stepTitle = (t: number | undefined) =>
+    t === undefined ? undefined : [formatTime(t), eventLabel(t)].filter(Boolean).join(' · ');
   const milestone = milestoneAt(time);
   const label = eventLabel(time);
   // The time itself is shown next to the buttons.
@@ -84,15 +86,15 @@ export function TimelineBar({
   return (
     <section className="timeline" aria-label="ציר זמן">
       <div className="timeline-row">
-        <div className="steps" role="group" aria-label="מעבר בין אירועים">
+        <div className="steps" role="group" aria-label="מעבר בציר הזמן">
           <button
             type="button"
             className="step-btn"
-            aria-label="האירוע הקודם"
-            title={prev ? `${formatTime(prev.time)} · ${prev.label}` : undefined}
+            aria-label="צעד אחורה"
+            title={stepTitle(prev)}
             disabled={prev === undefined}
             onClick={() => {
-              if (prev) onTimeChange(prev.time);
+              if (prev !== undefined) onTimeChange(prev);
             }}
           >
             →
@@ -100,11 +102,11 @@ export function TimelineBar({
           <button
             type="button"
             className="step-btn"
-            aria-label="האירוע הבא"
-            title={next ? `${formatTime(next.time)} · ${next.label}` : undefined}
+            aria-label="צעד קדימה"
+            title={stepTitle(next)}
             disabled={next === undefined}
             onClick={() => {
-              if (next) onTimeChange(next.time);
+              if (next !== undefined) onTimeChange(next);
             }}
           >
             ←
