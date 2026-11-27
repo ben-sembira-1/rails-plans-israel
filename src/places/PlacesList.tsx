@@ -6,11 +6,14 @@ export function PlacesList({
   error,
   selectedId,
   onSelect,
+  onSearch,
 }: {
   places: readonly SavedPlace[];
   error: string | null;
   selectedId: string | null;
   onSelect: (id: string) => void;
+  /** Moves the focus to the map's search box. */
+  onSearch?: () => void;
 }) {
   return (
     <section className="side-section" aria-label="מקומות מעניינים">
@@ -21,10 +24,20 @@ export function PlacesList({
         </div>
       )}
       {places.length === 0 ? (
-        <p className="muted">
-          אין עדיין מקומות שמורים. חפשו מקום בתיבת החיפוש שעל המפה, או לחצו על נקודת עניין במפה, ובחרו ״שמירה
-          כמקום מעניין״.
-        </p>
+        <div className="empty">
+          <span className="empty-icon" aria-hidden="true">
+            ★
+          </span>
+          <p>
+            אין עדיין מקומות שמורים. חפשו מקום בתיבת החיפוש שעל המפה, או לחצו על נקודת עניין במפה, ובחרו
+            ״שמירה כמקום מעניין״.
+          </p>
+          {onSearch && (
+            <button type="button" className="btn" onClick={onSearch}>
+              חיפוש מקום
+            </button>
+          )}
+        </div>
       ) : (
         <ul className="places-list">
           {places.map((p) => (

@@ -1,6 +1,7 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from './App.tsx';
+import { PLAY_EVENT_MS, PLAY_STEP_MS } from './components/TimelineBar.tsx';
 import { NETWORK } from './data/network.ts';
 import { createMemoryStore } from './places/memoryStore.ts';
 
@@ -56,11 +57,13 @@ vi.mock('./places/PlaceDetailsPanel.tsx', () => ({
 }));
 
 function eventsGroup() {
-  return screen.getByRole('group', { name: 'שינויי מצב עבודות' });
+  return screen.getByRole('group', { name: 'ציר האירועים' });
 }
-function milestonesGroup() {
-  return screen.getByRole('group', { name: 'אבני דרך' });
-}
+
+beforeEach(() => {
+  // The time is kept in the address (`?t=`); start every test from a clean one.
+  window.history.replaceState(null, '', '/');
+});
 
 describe('App', () => {
   it('starts at today and highlights the "today" event', () => {
@@ -68,7 +71,7 @@ describe('App', () => {
     expect(screen.getByTestId('map')).toHaveAttribute('data-time', '2026.75');
     const today = within(eventsGroup()).getByRole('button', { pressed: true });
     expect(today).toHaveTextContent('2026Q4');
-    expect(within(milestonesGroup()).queryByRole('button', { pressed: true })).toBeNull();
+    expect(today).toHaveTextContent('היום');
   });
 
   it('starts at the saved position when one is given', () => {
@@ -76,21 +79,32 @@ describe('App', () => {
     expect(screen.getByTestId('map')).toHaveAttribute('data-time', '2030');
   });
 
-  it('jumps to a milestone and highlights it in both rows', async () => {
+  it('jumps to a milestone from the event list and highlights it there and on the bar', async () => {
     const onTimeChange = vi.fn();
     render(<App network={NETWORK} maps={MAPS} onTimeChange={onTimeChange} />);
-    await userEvent.click(within(milestonesGroup()).getByRole('button', { name: 'אמצע 2028' }));
+    await userEvent.click(within(eventsGroup()).getByRole('button', { name: /2028Q2/ }));
     expect(screen.getByTestId('map')).toHaveAttribute('data-time', '2028.25');
-    expect(within(milestonesGroup()).getByRole('button', { pressed: true })).toHaveTextContent('אמצע 2028');
-    expect(within(eventsGroup()).getByRole('button', { pressed: true })).toHaveTextContent('2028Q2');
+    expect(within(eventsGroup()).getByRole('button', { pressed: true })).toHaveTextContent('הסגול נפתח');
+    expect(screen.getByRole('button', { name: '2028Q2 · אמצע 2028' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
     expect(onTimeChange).toHaveBeenLastCalledWith(2028.25);
     expect(screen.getByText('יוני–יולי 2028 · הקו הסגול')).toBeInTheDocument();
   });
 
-  it('lists the sections under heavy works', async () => {
+  it("shows each line's state in a word, and where the works are", async () => {
     render(<App network={NETWORK} maps={MAPS} />);
     await userEvent.click(within(eventsGroup()).getByRole('button', { name: /2029Q1/ }));
-    expect(screen.getByText(/M1 – שלב א׳/)).toBeInTheDocument();
+    const lines = screen.getByRole('list', { name: 'מצב הקווים' });
+    const m1 = within(lines).getByText('מטרו M1').closest('li');
+    expect(m1).not.toBeNull();
+    if (m1) {
+      expect(within(m1).getByText('עבודות כבדות')).toBeInTheDocument();
+      expect(within(m1).getByText('שלב א׳: ראשונים–גלילות')).toBeInTheDocument();
+    }
+    const red = within(lines).getByText('הקו האדום').closest('li');
+    if (red) expect(within(red).getByText('פועל')).toBeInTheDocument();
   });
 
   it('moves along the slider by quarter, then by year', () => {
@@ -125,7 +139,7 @@ describe('App', () => {
   it('disables "back" at the first step and "forward" at the last', async () => {
     render(<App network={NETWORK} maps={MAPS} initialTime={2023.5} />);
     expect(screen.getByRole('button', { name: 'צעד אחורה' })).toBeDisabled();
-    await userEvent.click(within(milestonesGroup()).getByRole('button', { name: 'ללא מועד' }));
+    await userEvent.click(within(eventsGroup()).getByRole('button', { name: /ללא מועד/ }));
     expect(screen.getByRole('button', { name: 'צעד קדימה' })).toBeDisabled();
   });
 
@@ -152,18 +166,21 @@ describe('App', () => {
     expect(today).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('starts closed on a phone and opens from the toggle', async () => {
+  it('starts as a peeking sheet on a phone and opens from its handle', async () => {
     vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('800px') }));
     try {
       render(<App network={NETWORK} maps={MAPS} />);
-      const toggle = screen.getByRole('button', { name: /מקרא ואירועים/ });
+      const handle = screen.getByRole('button', { name: 'פתיחת לוח המידע' });
       const panel = screen.getByRole('complementary', { name: 'לוח בקרה' });
-      expect(toggle).toHaveAttribute('aria-expanded', 'false');
-      expect(toggle).toHaveAttribute('aria-controls', panel.id);
-      expect(panel).not.toHaveClass('open');
-      await userEvent.click(toggle);
-      expect(toggle).toHaveAttribute('aria-expanded', 'true');
-      expect(panel).toHaveClass('open');
+      expect(handle).toHaveAttribute('aria-expanded', 'false');
+      expect(handle).toHaveAttribute('aria-controls', panel.id);
+      expect(panel).toHaveClass('sheet-peek');
+      await userEvent.click(handle);
+      expect(handle).toHaveAttribute('aria-expanded', 'true');
+      expect(handle).toHaveAccessibleName('סגירת לוח המידע');
+      expect(panel).toHaveClass('sheet-half');
+      await userEvent.click(handle);
+      expect(panel).toHaveClass('sheet-peek');
     } finally {
       vi.unstubAllGlobals();
     }
@@ -175,16 +192,16 @@ describe('App', () => {
     const panel = screen.getByRole('complementary', { name: 'לוח בקרה' });
     const trains = screen.getByRole('tab', { name: 'מידע על הרכבות' });
     expect(trains).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('group', { name: 'אבני דרך' })).toBeInTheDocument();
+    expect(eventsGroup()).toBeInTheDocument();
 
     await userEvent.click(trains);
-    expect(panel).not.toHaveClass('open');
+    expect(panel).toHaveClass('sheet-peek');
     expect(container.querySelector('.workspace')).toHaveClass('panel-closed');
-    expect(screen.queryByRole('group', { name: 'אבני דרך' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'ציר האירועים' })).toBeNull();
     expect(screen.getAllByRole('tab').every((t) => t.getAttribute('aria-selected') === 'false')).toBe(true);
 
     await userEvent.click(screen.getByRole('tab', { name: 'מקומות מעניינים (0)' }));
-    expect(panel).toHaveClass('open');
+    expect(panel).not.toHaveClass('sheet-peek');
     expect(screen.getByRole('region', { name: 'מקומות מעניינים' })).toBeInTheDocument();
   });
 
@@ -202,17 +219,99 @@ describe('App', () => {
     expect(timeline.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('documents how to read the map in the side panel', () => {
+  it('documents how to read the map, the sources and how fresh the data is', () => {
     render(<App network={NETWORK} maps={MAPS} />);
     const docs = screen.getByRole('region', { name: 'איך לקרוא את המפה' });
-    expect(within(docs).getByText(/קו מלא – פועל/)).toBeInTheDocument();
-    expect(within(docs).getByText(/מקורות:/)).toBeInTheDocument();
+    expect(within(docs).getByText(/קו מלא: פועל/)).toBeInTheDocument();
+    expect(screen.getByText(/מקורות:/)).toBeInTheDocument();
+    expect(screen.getByText(/נתוני הרכבות נכונים ל־27\/11\/2026/)).toBeInTheDocument();
+    expect(screen.getByText(/האתר אינו אתר רשמי/)).toBeInTheDocument();
   });
 
-  it('hides a line from the legend', async () => {
+  it('hides a line from the layers picker on the map', async () => {
     render(<App network={NETWORK} maps={MAPS} />);
+    const layers = screen.getByRole('button', { name: 'שכבות' });
+    expect(layers).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.click(layers);
     await userEvent.click(screen.getByRole('checkbox', { name: /הקו הסגול/ }));
     expect(screen.getByTestId('map')).toHaveAttribute('data-hidden', 'purple');
+    expect(within(layers).getByLabelText('חלק מהשכבות מוסתרות')).toBeInTheDocument();
+    await userEvent.keyboard('{Escape}');
+    expect(layers).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('plays the timeline step by step, and stops when the user moves it', () => {
+    vi.useFakeTimers();
+    try {
+      render(<App network={NETWORK} maps={MAPS} initialTime={2027} />);
+      const map = screen.getByTestId('map');
+      fireEvent.click(screen.getByRole('button', { name: 'ניגון ציר הזמן' }));
+      expect(screen.getByRole('button', { name: 'עצירת הניגון' })).toHaveAttribute('aria-pressed', 'true');
+      act(() => {
+        vi.advanceTimersByTime(PLAY_STEP_MS);
+      });
+      expect(map).toHaveAttribute('data-time', '2027.25');
+      act(() => {
+        vi.advanceTimersByTime(PLAY_STEP_MS);
+      });
+      expect(map).toHaveAttribute('data-time', '2027.5');
+      fireEvent.click(screen.getByRole('button', { name: 'צעד אחורה' }));
+      expect(screen.getByRole('button', { name: 'ניגון ציר הזמן' })).toHaveAttribute('aria-pressed', 'false');
+      act(() => {
+        vi.advanceTimersByTime(PLAY_EVENT_MS);
+      });
+      expect(map).toHaveAttribute('data-time', '2027.25');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('jumps to the next and previous event with PageUp and PageDown on the bar', () => {
+    render(<App network={NETWORK} maps={MAPS} />);
+    const slider = screen.getByRole('slider', { name: 'ציר זמן' });
+    fireEvent.keyDown(slider, { key: 'PageUp' });
+    const next = Number(screen.getByTestId('map').getAttribute('data-time'));
+    expect(next).toBeGreaterThan(2026.75);
+    expect(within(eventsGroup()).getByRole('button', { pressed: true })).toBeInTheDocument();
+    fireEvent.keyDown(slider, { key: 'PageDown' });
+    expect(screen.getByTestId('map')).toHaveAttribute('data-time', '2026.75');
+  });
+
+  it('opens at the time in a shared link and keeps the address up to date', async () => {
+    window.history.replaceState(null, '', '/?t=2030');
+    render(<App network={NETWORK} maps={MAPS} initialTime={2027} />);
+    expect(screen.getByTestId('map')).toHaveAttribute('data-time', '2030');
+    await userEvent.click(screen.getByRole('button', { name: 'צעד קדימה' }));
+    expect(window.location.search).toBe('?t=2031');
+  });
+
+  it('says what changed after a move, and closes the note', async () => {
+    render(<App network={NETWORK} maps={MAPS} initialTime={2028} />);
+    expect(screen.queryByRole('status', { name: 'מה השתנה' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'צעד קדימה' }));
+    const note = screen.getByRole('status', { name: 'מה השתנה' });
+    expect(within(note).getByText(/הקו הסגול:/)).toBeInTheDocument();
+    await userEvent.click(within(note).getByRole('button', { name: 'סגירת ההודעה' }));
+    expect(screen.queryByRole('status', { name: 'מה השתנה' })).toBeNull();
+  });
+
+  it('opens the about dialog from the top strip and closes it with Escape', async () => {
+    render(<App network={NETWORK} maps={MAPS} />);
+    await userEvent.click(screen.getByRole('button', { name: 'אודות המפה' }));
+    const dialog = screen.getByRole('dialog', { name: 'אודות המפה' });
+    expect(within(dialog).getByText(/נתוני הרכבות נכונים ל־27\/11\/2026/)).toBeInTheDocument();
+    expect(within(dialog).getByRole('link', { name: 'דווחו עליה ב־GitHub' })).toBeInTheDocument();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('copies a link to the time shown', async () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    render(<App network={NETWORK} maps={MAPS} initialTime={2030} />);
+    await userEvent.click(screen.getByRole('button', { name: 'העתקת קישור לזמן המוצג' }));
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('?t=2030'));
+    expect(await screen.findByText('הקישור הועתק')).toBeInTheDocument();
   });
 
   it('shows the logo strip with the version and the current time', async () => {

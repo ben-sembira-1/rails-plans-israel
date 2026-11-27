@@ -71,3 +71,19 @@ export function adjacentSteps(t: number): {
   const i = nearestStepIndex(t);
   return { prev: STEPS[i - 1], next: STEPS[i + 1] };
 }
+
+/** The time in a shared link (`?t=2028.25`), snapped onto the grid; `null` when missing or invalid. */
+export function timeFromSearch(search: string): number | null {
+  const raw = new URLSearchParams(search).get('t');
+  if (raw === null || raw.trim() === '') return null;
+  const t = Number(raw);
+  if (!Number.isFinite(t) || t < TIMELINE_START) return null;
+  return STEPS[nearestStepIndex(snap(t))] ?? null;
+}
+
+/** `href` with its `t` parameter set to `t`, keeping every other part of the address. */
+export function withTime(href: string, t: number): string {
+  const url = new URL(href);
+  url.searchParams.set('t', String(t));
+  return url.toString();
+}

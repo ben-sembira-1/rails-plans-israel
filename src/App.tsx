@@ -1,21 +1,26 @@
 import { APIProvider, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { AboutDialog } from './components/AboutDialog.tsx';
+import { ChangeNote } from './components/ChangeNote.tsx';
+import { LayersControl } from './components/LayersControl.tsx';
 import { MapView } from './components/MapView.tsx';
 import { SidePanel, type PanelTab } from './components/SidePanel.tsx';
+import { Toast } from './components/Toast.tsx';
 import { useConstruction, type ConstructionState } from './construction/useConstruction.ts';
 import { TimelineBar } from './components/TimelineBar.tsx';
 import { TopBar } from './components/TopBar.tsx';
-import type { Network } from './data/schema.ts';
+import type { LatLng, Network } from './data/schema.ts';
 import {
   CONSTRUCTION_HIDDEN_BY_DEFAULT,
   countsAt,
   projectsAt,
   type ConstructionLayer,
 } from './domain/construction.ts';
+import { changesBetween } from './domain/changes.ts';
 import { worksEvents } from './domain/events.ts';
-import type { LayerId } from './domain/lines.ts';
+import type { LayerId, LineId } from './domain/lines.ts';
 import { markersFor } from './domain/markers.ts';
-import { nearestStepIndex, STEPS, TODAY } from './domain/time.ts';
+import { nearestStepIndex, STEPS, timeFromSearch, TODAY, withTime } from './domain/time.ts';
 import type { MapsConfig } from './map/config.ts';
 import { placeFromGoogle } from './places/google.ts';
 import { CandidateCard, SavedPlaceCard } from './places/PlaceCards.tsx';
@@ -73,7 +78,11 @@ function MapArea({
   onPick,
   onSelect,
   onCloseCard,
+  highlight,
+  focus,
 }: {
+  highlight: LineId | null;
+  focus: { readonly key: number; readonly points: readonly LatLng[] } | null;
   network: Network;
   time: number;
   hidden: ReadonlySet<LayerId>;
@@ -108,6 +117,8 @@ function MapArea({
         construction={construction.status === 'ready' ? construction.data : null}
         constructionHidden={constructionHidden}
         mapId={mapId}
+        highlight={highlight}
+        focus={focus}
         {...(store && placesLib
           ? {
               onPoiClick: (placeId: string) => {
@@ -157,7 +168,52 @@ export function App({
   page,
   construction: constructionOverride,
 }: AppProps) {
-  const [time, setTime] = useState(() => STEPS[nearestStepIndex(initialTime ?? TODAY)] ?? TODAY);
+  // A shared link's time (`?t=`) wins over the user's saved position.
+  const [time, setTime] = useState(
+    () => timeFromSearch(window.location.search) ?? STEPS[nearestStepIndex(initialTime ?? TODAY)] ?? TODAY,
+  );
+  // The time before the user's last move, for the "what changed" note (`null` = no note).
+  const [from, setFrom] = useState<number | null>(null);
+  const go = useCallback(
+    (t: number) => {
+      if (t === time) return;
+      setFrom(time);
+      setTime(t);
+      window.history.replaceState(window.history.state, '', withTime(window.location.href, t));
+    },
+    [time],
+  );
+  const [about, setAbout] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const [highlight, setHighlight] = useState<LineId | null>(null);
+  const [focus, setFocus] = useState<{ key: number; points: readonly LatLng[] } | null>(null);
+  const focusOn = useCallback((points: readonly LatLng[]) => {
+    setFocus((f) => ({ key: (f?.key ?? 0) + 1, points }));
+  }, []);
+  const closeAbout = useCallback(() => {
+    setAbout(false);
+  }, []);
+  const clearToast = useCallback(() => {
+    setToast(null);
+  }, []);
+  const share = useCallback(() => {
+    const url = withTime(window.location.href, time);
+    const done = (text: string) => {
+      setToast(text);
+    };
+    if (!('clipboard' in navigator)) {
+      done('ההעתקה לא נתמכת בדפדפן הזה. העתיקו את הכתובת מסרגל הכתובות.');
+      return;
+    }
+    navigator.clipboard.writeText(url).then(
+      () => {
+        done('הקישור הועתק');
+      },
+      () => {
+        done('ההעתקה נכשלה. העתיקו את הכתובת מסרגל הכתובות.');
+      },
+    );
+  }, [time]);
   const [hidden, setHidden] = useState<ReadonlySet<LayerId>>(new Set());
   const [tab, setTab] = useState<PanelTab | null>(() => (isNarrow() ? null : 'trains'));
   const [lastTab, setLastTab] = useState<PanelTab>('trains');
@@ -177,6 +233,25 @@ export function App({
   const constructionCounts = useMemo(
     () => (construction.status === 'ready' ? countsAt(projectsAt(construction.data, time)) : null),
     [construction, time],
+  );
+  const changes = useMemo(
+    () => (from === null ? [] : changesBetween(network.sections, network.sites, from, time)),
+    [network, from, time],
+  );
+  const sitesDelta = useMemo(() => {
+    if (from === null || construction.status !== 'ready' || constructionCounts === null) return null;
+    const before = countsAt(projectsAt(construction.data, from)).construction;
+    const now = constructionCounts.construction;
+    return { now, delta: now - before };
+  }, [from, construction, constructionCounts]);
+  const focusLine = useCallback(
+    (id: LineId) => {
+      focusOn([
+        ...network.sections.filter((s) => s.line === id).flatMap((s) => s.paths.flat()),
+        ...network.stations.filter((s) => s.line === id).map((s) => s.position),
+      ]);
+    },
+    [network, focusOn],
   );
   const toggleConstruction = useCallback((layer: ConstructionLayer, visible: boolean) => {
     setConstructionHidden((h) => {
@@ -248,36 +323,30 @@ export function App({
 
   const app = (
     <div className="app" dir="rtl">
-      <TopBar time={time} actions={headerActions} />
+      <TopBar
+        time={time}
+        actions={headerActions}
+        onAbout={() => {
+          setAbout(true);
+        }}
+        onShare={share}
+      />
       {page ?? (
         <div className={tab === null ? 'workspace panel-closed' : 'workspace'}>
           <div className="side-column">
-            <TimelineBar
-              time={time}
-              markers={markers}
-              onTimeChange={setTime}
-              panelOpen={tab !== null}
-              panelId={panelId}
-              onTogglePanel={() => {
-                openTab(tab === null ? lastTab : null);
-              }}
-            />
+            <TimelineBar time={time} markers={markers} onTimeChange={go} />
             <SidePanel
               id={panelId}
               tab={tab}
               onTab={openTab}
+              lastTab={lastTab}
               time={time}
-              events={events}
-              sections={network.sections}
-              sites={network.sites}
-              hidden={hidden}
-              onTimeChange={setTime}
-              onToggleLayer={toggleLayer}
-              construction={{
-                state: construction,
-                counts: constructionCounts,
-                hidden: constructionHidden,
-                onToggle: toggleConstruction,
+              markers={markers}
+              network={network}
+              onTimeChange={go}
+              construction={{ state: construction, counts: constructionCounts }}
+              onAbout={() => {
+                setAbout(true);
               }}
               {...(store
                 ? {
@@ -292,6 +361,12 @@ export function App({
                             select(id);
                             // On a phone the panel covers the map; close it to show the place.
                             if (isNarrow()) openTab(null);
+                          }}
+                          onSearch={() => {
+                            if (isNarrow()) openTab(null);
+                            document
+                              .querySelector<HTMLElement>('.place-search gmp-place-autocomplete')
+                              ?.focus();
                           }}
                         />
                       ),
@@ -320,11 +395,39 @@ export function App({
                   setCandidate(null);
                   setSelectedId(null);
                 }}
+                highlight={highlight}
+                focus={focus}
               />
             ) : (
               <div className="map-missing" role="note">
                 המפה לא הוגדרה: חסר מפתח Google Maps (<code dir="ltr">VITE_GOOGLE_MAPS_API_KEY</code>).
               </div>
+            )}
+            {from !== null && changes.length > 0 && (
+              <ChangeNote
+                from={from}
+                to={time}
+                changes={changes}
+                sitesDelta={sitesDelta}
+                onFocus={focusOn}
+                onClose={() => {
+                  setFrom(null);
+                }}
+              />
+            )}
+            {maps && (
+              <LayersControl
+                hidden={hidden}
+                onToggle={toggleLayer}
+                onHighlight={setHighlight}
+                onFocusLine={focusLine}
+                construction={{
+                  state: construction,
+                  counts: constructionCounts,
+                  hidden: constructionHidden,
+                  onToggle: toggleConstruction,
+                }}
+              />
             )}
           </div>
           {maps && details && (
@@ -338,6 +441,14 @@ export function App({
           )}
         </div>
       )}
+      {about && (
+        <AboutDialog
+          updated={network.updated}
+          constructionUpdated={construction.status === 'ready' ? construction.data.fetchedAt : null}
+          onClose={closeAbout}
+        />
+      )}
+      {toast !== null && <Toast text={toast} onDone={clearToast} />}
     </div>
   );
   return maps ? (

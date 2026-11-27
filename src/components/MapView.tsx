@@ -6,13 +6,14 @@ import {
   Polygon,
   Polyline,
   useApiIsLoaded,
+  useMap,
 } from '@vis.gl/react-google-maps';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { ConstructionLayer } from '../construction/ConstructionLayer.tsx';
 import type { ConstructionData } from '../data/construction.ts';
 import type { LatLng, Network, Section, Site, Station, WorksStatus } from '../data/schema.ts';
 import { bufferRings } from '../domain/geo.ts';
-import { LINES, type LayerId } from '../domain/lines.ts';
+import { LINES, type LayerId, type LineId } from '../domain/lines.ts';
 import { loadLiveRail } from '../domain/rail.ts';
 import {
   isSiteActive,
@@ -24,10 +25,15 @@ import {
 import { formatTime, stepBefore } from '../domain/time.ts';
 import { RAIL_INNER_M as INNER_M, RAIL_OUTER_M as OUTER_M } from '../domain/zones.ts';
 import type { ConstructionLayer as ConstructionLayerId } from '../domain/construction.ts';
+import { formatDate } from './format.ts';
 import { clickPosition, type OpenPopup, type Popup } from './popup.ts';
+import { Estimated, PopupFrame } from './PopupFrame.tsx';
+import { useFadeIn } from './useFadeIn.ts';
 import { sectionLineStyle, sectionZ, Z } from './sectionStyle.ts';
 
 const LABEL_ZOOM = 15;
+/** Opacity of the other lines while one line is highlighted. */
+const DIM = 0.2;
 const INITIAL_BOUNDS = { south: 31.98, west: 34.74, north: 32.17, east: 34.92 };
 
 /** [inner band, outer band] colors. */
@@ -42,10 +48,13 @@ function lineWeight(section: { line: Section['line'] }): number {
 
 const toLatLng = ([lat, lng]: LatLng): google.maps.LatLngLiteral => ({ lat, lng });
 
-function SectionPopup({ section }: { section: Section }) {
+function SectionPopup({ section, updated }: { section: Section; updated: string }) {
   return (
-    <div className="pop">
-      <b>{section.name}</b>
+    <PopupFrame
+      title={section.name}
+      swatch={LINES[section.line].color}
+      source={<>מקור: לו״ז העבודות של נת״ע, נכון ל־{formatDate(updated)}</>}
+    >
       <table>
         <tbody>
           {section.phases.map((p, i) => (
@@ -60,7 +69,7 @@ function SectionPopup({ section }: { section: Section }) {
           ))}
         </tbody>
       </table>
-    </div>
+    </PopupFrame>
   );
 }
 
@@ -69,7 +78,17 @@ function SectionPopup({ section }: { section: Section }) {
  * (Thick polylines can't be used: Google Maps caps line width at a few dozen pixels, far narrower than 200 m at
  * street zoom.)
  */
-function ZoneBands({ path, colors }: { path: readonly LatLng[]; colors: readonly [string, string] }) {
+function ZoneBands({
+  path,
+  colors,
+  dim,
+}: {
+  path: readonly LatLng[];
+  colors: readonly [string, string];
+  dim: number;
+}) {
+  // A zone that just appeared (works started) fades in, so the change is seen.
+  const k = useFadeIn() * dim;
   const outer = useMemo(() => bufferRings(path, OUTER_M).map((ring) => ring.map(toLatLng)), [path]);
   const inner = useMemo(() => bufferRings(path, INNER_M).map((ring) => ring.map(toLatLng)), [path]);
   return (
@@ -77,7 +96,7 @@ function ZoneBands({ path, colors }: { path: readonly LatLng[]; colors: readonly
       <Polygon
         paths={outer}
         fillColor={colors[1]}
-        fillOpacity={0.5}
+        fillOpacity={0.5 * k}
         strokeWeight={0}
         strokeOpacity={0}
         zIndex={Z.zoneOuter}
@@ -86,7 +105,7 @@ function ZoneBands({ path, colors }: { path: readonly LatLng[]; colors: readonly
       <Polygon
         paths={inner}
         fillColor={colors[0]}
-        fillOpacity={0.6}
+        fillOpacity={0.6 * k}
         strokeWeight={0}
         strokeOpacity={0}
         zIndex={Z.zoneInner}
@@ -96,16 +115,34 @@ function ZoneBands({ path, colors }: { path: readonly LatLng[]; colors: readonly
   );
 }
 
-function SectionLayer({ section, time, onPopup }: { section: Section; time: number; onPopup: OpenPopup }) {
+function SectionLayer({
+  section,
+  time,
+  dim,
+  updated,
+  onPopup,
+}: {
+  section: Section;
+  time: number;
+  /** Opacity factor: 1, or `DIM` while another line is highlighted. */
+  dim: number;
+  updated: string;
+  onPopup: OpenPopup;
+}) {
   const status = statusAt(section, time);
   const zone = ZONE_COLORS[status];
   const w = lineWeight(section);
   const line = sectionLineStyle(status, w, LINES[section.line].color);
   const z = sectionZ(status);
-  const casingOpacity = status === 'none' ? 0 : status === 'open' ? 1 : 0.9;
+  const casingOpacity = (status === 'none' ? 0 : status === 'open' ? 1 : 0.9) * dim;
+  // Every option that can change is passed on every render (Google merges `setOptions`).
+  const icons = line.icons.map((i) => ({
+    ...i,
+    icon: { ...i.icon, strokeOpacity: i.icon.strokeOpacity * dim, fillOpacity: i.icon.fillOpacity * dim },
+  }));
   const onClick = (e: google.maps.MapMouseEvent) => {
     const position = clickPosition(e);
-    if (position) onPopup({ position, content: <SectionPopup section={section} /> });
+    if (position) onPopup({ position, content: <SectionPopup section={section} updated={updated} /> });
   };
   return (
     <>
@@ -114,7 +151,7 @@ function SectionLayer({ section, time, onPopup }: { section: Section; time: numb
         return (
           // Paths never reorder, so the index is a stable key.
           <Fragment key={i}>
-            {zone !== undefined && <ZoneBands path={p} colors={zone} />}
+            {zone !== undefined && <ZoneBands path={p} colors={zone} dim={dim} />}
             <Polyline
               path={path}
               strokeColor="#fff"
@@ -126,9 +163,9 @@ function SectionLayer({ section, time, onPopup }: { section: Section; time: numb
             <Polyline
               path={path}
               strokeColor={LINES[section.line].color}
-              strokeOpacity={line.strokeOpacity}
+              strokeOpacity={line.strokeOpacity * dim}
               strokeWeight={line.strokeWeight}
-              icons={line.icons}
+              icons={icons}
               zIndex={z.line}
               onClick={onClick}
             />
@@ -141,33 +178,53 @@ function SectionLayer({ section, time, onPopup }: { section: Section; time: numb
 
 function SitePopup({ site }: { site: Site }) {
   return (
-    <div className="pop">
-      <b>
-        {site.name}
-        {site.approximate ? ' (מיקום משוער)' : ''}
-      </b>
+    <PopupFrame
+      title={site.name}
+      swatch={LINES[site.line].color}
+      subtitle={site.approximate ? <Estimated>מיקום משוער</Estimated> : undefined}
+      source="מקור: נת״ע, אתרי ההכנה של המטרו"
+    >
       <table>
         <tbody>
           <tr>
             <td dir="ltr" className="range">
               {formatTime(site.since)}–{formatTime(stepBefore(METRO_HEAVY_WORKS_FROM))}
             </td>
-            <td>עבודות קלות: {site.note}</td>
+            <td>
+              <span className="chip chip-minor">עבודות קלות</span> {site.note}
+            </td>
           </tr>
           <tr>
             <td dir="ltr" className="range">
               {formatTime(METRO_HEAVY_WORKS_FROM)}–2033
             </td>
-            <td>עבודות כבדות לאורך הקו</td>
+            <td>
+              <span className="chip chip-major">עבודות כבדות</span> לאורך הקו
+            </td>
           </tr>
         </tbody>
       </table>
-    </div>
+    </PopupFrame>
   );
 }
 
-function SiteLayer({ site, time, onPopup }: { site: Site; time: number; onPopup: OpenPopup }) {
-  if (!isSiteActive(site, time)) return null;
+function SiteLayer({
+  site,
+  time,
+  dim,
+  onPopup,
+}: {
+  site: Site;
+  time: number;
+  dim: number;
+  onPopup: OpenPopup;
+}) {
+  return isSiteActive(site, time) ? <SiteZone site={site} dim={dim} onPopup={onPopup} /> : null;
+}
+
+/** An active site's two bands; mounted when the site starts, so it fades in. */
+function SiteZone({ site, dim, onPopup }: { site: Site; dim: number; onPopup: OpenPopup }) {
+  const k = useFadeIn() * dim;
   const [inner, outer] = ZONE_COLORS.minor ?? ['#E0A800', '#FFE38A'];
   const center = toLatLng(site.position);
   return (
@@ -177,7 +234,7 @@ function SiteLayer({ site, time, onPopup }: { site: Site; time: number; onPopup:
         radius={OUTER_M}
         strokeWeight={0}
         fillColor={outer}
-        fillOpacity={0.5}
+        fillOpacity={0.5 * k}
         zIndex={Z.zoneOuter}
         onClick={(e: google.maps.MapMouseEvent) => {
           onPopup({ position: clickPosition(e) ?? center, content: <SitePopup site={site} /> });
@@ -188,7 +245,7 @@ function SiteLayer({ site, time, onPopup }: { site: Site; time: number; onPopup:
         radius={INNER_M}
         strokeWeight={0}
         fillColor={inner}
-        fillOpacity={0.6}
+        fillOpacity={0.6 * k}
         zIndex={Z.zoneInner}
         clickable={false}
       />
@@ -219,11 +276,13 @@ function StationMarker({
   station,
   time,
   label,
+  dim,
   onPopup,
 }: {
   station: Station;
   time: number;
   label: boolean;
+  dim: boolean;
   onPopup: OpenPopup;
 }) {
   const open = station.opens <= time;
@@ -239,24 +298,25 @@ function StationMarker({
         onPopup({
           position,
           content: (
-            <div className="pop">
-              <b>{station.name}</b>
+            <PopupFrame
+              title={station.name}
+              swatch={line.color}
+              hollow={!open}
+              subtitle={line.name}
+              source="מקור: נת״ע ותמ״א 70"
+            >
               <div>
-                <span className="dot" style={{ background: line.color }} />
-                {line.name}
-              </div>
-              <div>
-                פתיחה: {formatTime(station.opens)}
+                {open ? 'נפתחה' : 'פתיחה'}: <span dir="ltr">{formatTime(station.opens)}</span>
                 {station.opens === 2037 ? ' (יעד רשמי 2034–2037)' : ''}
               </div>
-              {station.approximate && <div>מיקום משוער</div>}
-            </div>
+              {station.approximate && <Estimated>מיקום משוער</Estimated>}
+            </PopupFrame>
           ),
         });
       }}
     >
       <span
-        className={`stn${line.metro ? ' metro' : ''}${open ? '' : ' fut'}`}
+        className={`stn${line.metro ? ' metro' : ''}${open ? '' : ' fut'}${dim ? ' dim' : ''}`}
         style={{ borderColor: line.color }}
       >
         {label && <span className="lbl">{station.name}</span>}
@@ -317,12 +377,7 @@ function RailLayer({ network, onPopup }: { network: Network; onPopup: OpenPopup 
             onClick={() => {
               onPopup({
                 position,
-                content: (
-                  <div className="pop">
-                    <b>{s.name}</b>
-                    <div>רכבת ישראל · פועלת</div>
-                  </div>
-                ),
+                content: <PopupFrame title={s.name} swatch="#4a4a4a" subtitle="רכבת ישראל, פועלת" />,
               });
             }}
           >
@@ -346,8 +401,31 @@ export interface MapViewProps {
   readonly constructionHidden?: ReadonlySet<ConstructionLayerId>;
   /** A click on a Google point of interest (shop, park, …). */
   readonly onPoiClick?: (placeId: string, position: google.maps.LatLngLiteral) => void;
+  /** A line to highlight: the others are dimmed. */
+  readonly highlight?: LineId | null;
+  /** Points to zoom the map to; a new `key` zooms again. */
+  readonly focus?: { readonly key: number; readonly points: readonly LatLng[] } | null;
   /** Extra layers (e.g. places of interest). */
   readonly children?: React.ReactNode;
+}
+
+/** Zooms the map to `focus` whenever its key changes. */
+function MapFocus({ focus }: { focus: MapViewProps['focus'] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!map || !focus || focus.points.length === 0) return;
+    const b = new google.maps.LatLngBounds();
+    for (const p of focus.points) b.extend(toLatLng(p));
+    map.fitBounds(b, 60);
+    // A single point (a site) would zoom in all the way.
+    const once = google.maps.event.addListenerOnce(map, 'idle', () => {
+      if ((map.getZoom() ?? 0) > 17) map.setZoom(17);
+    });
+    return () => {
+      once.remove();
+    };
+  }, [map, focus]);
+  return null;
 }
 
 const NONE: ReadonlySet<ConstructionLayerId> = new Set();
@@ -360,8 +438,11 @@ export function MapView({
   construction = null,
   constructionHidden = NONE,
   onPoiClick,
+  highlight = null,
+  focus = null,
   children,
 }: MapViewProps) {
+  const dimOf = (line: LineId) => (highlight !== null && highlight !== line ? DIM : 1);
   const [zoom, setZoom] = useState(12);
   const [popup, setPopup] = useState<Popup | null>(null);
   const [labels] = useState(() => labelledStations(network.stations));
@@ -403,12 +484,19 @@ export function MapView({
         {network.sections
           .filter((s) => visible(s.line))
           .map((s) => (
-            <SectionLayer key={s.id} section={s} time={time} onPopup={setPopup} />
+            <SectionLayer
+              key={s.id}
+              section={s}
+              time={time}
+              dim={dimOf(s.line)}
+              updated={network.updated}
+              onPopup={setPopup}
+            />
           ))}
         {network.sites
           .filter((s) => visible(s.line))
           .map((s) => (
-            <SiteLayer key={s.id} site={s} time={time} onPopup={setPopup} />
+            <SiteLayer key={s.id} site={s} time={time} dim={dimOf(s.line)} onPopup={setPopup} />
           ))}
         {network.stations
           .filter((s) => visible(s.line))
@@ -418,6 +506,7 @@ export function MapView({
               station={s}
               time={time}
               label={labels.has(s)}
+              dim={dimOf(s.line) < 1}
               onPopup={setPopup}
             />
           ))}
@@ -431,6 +520,7 @@ export function MapView({
             <div dir="rtl">{popup.content}</div>
           </InfoWindow>
         )}
+        <MapFocus focus={focus} />
         {children}
       </Map>
     </div>

@@ -36,10 +36,17 @@ point in time:
   light works are yellow.
 - Before the metro's heavy works start (2029), the metro lines are **not** shown as works along their whole length;
   only the known **preparatory sites** get a circular two-band work zone, from their start date.
-- Stations are markers; their names appear from zoom 15. Future stations are faded. Clicking a station shows its
-  line, opening date and whether its position is approximate.
-- Clicking a section shows all its phases with their date ranges.
-- A legend explains the styles and lets the user hide individual lines.
+- Stations are markers; their names appear from zoom 15. Future stations have a dashed ring. Clicking a station
+  shows its line, opening date and whether its position is approximate.
+- Clicking a section shows all its phases with their date ranges. Every popup has the same frame: a swatch of what
+  was clicked, the title, the details, and the source with its date; estimates are tagged "משוער".
+- A work zone that appears (works start) fades in briefly, unless the user prefers reduced motion.
+- A **layers picker** on the map (next to the map/satellite switch, always visible) hides or shows each line,
+  Israel Railways and the construction layers. Hovering a line dims the others; its zoom button fits the map to
+  it. A dot on the button says some layers are hidden.
+- After the user moves in time, a **"what changed" note** over the map lists the lines whose sections opened or
+  started works (and the change in active building sites); each row zooms to those sections. It stays until
+  closed or the next move.
 
 ### City construction
 
@@ -73,16 +80,24 @@ point in time:
 
 ### Layout
 
-- A **top strip** with the logo, the app name, the version and the time currently shown on the timeline. Admins
-  also get an **admin center** button (with a pending-requests count) that opens the access-management page; every
-  signed-in user gets an account menu (sign out).
+- The look: ink on cool white (IBM Plex Sans Hebrew). Color is used only for what the map means (lines, works,
+  construction); selected controls are ink.
+- A **top strip** with the logo, the app name, the version, the time currently shown on the timeline, **copy link**
+  (a link to the time shown, `?t=`, confirmed with a short message) and **about** (a dialog: what the map shows,
+  how dates and zones are made, sources with dates, keyboard keys, how to report a mistake, and that the site is
+  not official). Admins also get an **admin center** button (with a pending-requests count) that opens the
+  access-management page; every signed-in user gets an account menu (sign out).
+- The time shown is kept in the address (`?t=2028.25`); a shared link opens at its time (before the user's saved
+  position).
 - The **timeline** is always right under the top strip, on every screen size.
-- **Desktop**: a **side panel on the left** holds all the controls and the documentation, in a trains tab: the status at the
-  current time (milestone text, sections under heavy and light works), the milestones and works-status events
-  (buttons), the layer toggles and "how to read the map" (line styles, works zones, sources). The map fills the
-  rest.
-- **Narrow screens / phone**: the side panel is hidden; a "legend and events" toggle under the timeline opens it
-  over the map.
+- **Desktop**: a **side panel on the left** holds the information, in a trains tab: the status at the current time
+  (the milestone text, then one row per line with its state in a word, the share of it open / under works, and
+  where the works are), city construction as three figures, the events as a vertical dated list, "how to read the
+  map" (collapsible, remembered) and a footer with the data dates, the sources and that the site is not official.
+  The map fills the rest.
+- **Narrow screens / phone**: the side panel is a **bottom sheet** with a handle: it peeks with its tabs, and opens
+  to half or full height by tapping the handle, dragging it or choosing a tab. Google's details panel is a sheet
+  too (half or full; dragging it down closes it).
 
 ### Timeline
 
@@ -95,6 +110,11 @@ point in time:
   bigger and labelled, and the current marker is highlighted. Under the bar: the current caption. On a phone the
   markers are small, unlabelled and not tappable (the slider and the panel's event list do that job).
 - Dates are formatted `YYYYQn` on the quarterly part and `YYYY` on the yearly part.
+- The bar is drawn as a rail line: the travelled part solid, the future dashed, a tick per step, events as small
+  stops, milestones as stations and the current time as a filled "train" that glides between steps. Labels on
+  the same side of the bar never overlap.
+- **Play** walks the bar step by step (a longer stop on events) and stops at the end or when the user moves the
+  time. Keys on the bar: arrows step, PageUp / PageDown jump to the next / previous event, Space plays and stops.
 
 ### Engineering
 

@@ -49,6 +49,8 @@ export interface RailStation {
 }
 
 export interface Network {
+  /** The day the network data (lines, phases, dates) was last checked against the sources, `YYYY-MM-DD`. */
+  readonly updated: string;
   readonly sections: readonly Section[];
   readonly sites: readonly Site[];
   readonly stations: readonly Station[];
@@ -130,7 +132,11 @@ function railStation(v: unknown, p: string): RailStation {
 /** Validates raw JSON and returns it typed. Throws a `SchemaError` naming the first offending path. */
 export function parseNetwork(raw: unknown): Network {
   const o = obj(raw, '$');
+  const updated = str(o['updated'], 'updated');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(updated) || Number.isNaN(Date.parse(updated)))
+    fail('updated', 'a YYYY-MM-DD date');
   const network: Network = {
+    updated,
     sections: arr(o['sections'], 'sections').map((x, i) => section(x, `sections[${i}]`)),
     sites: arr(o['sites'], 'sites').map((x, i) => site(x, `sites[${i}]`)),
     stations: arr(o['stations'], 'stations').map((x, i) => station(x, `stations[${i}]`)),

@@ -80,7 +80,8 @@ export class Ui {
   }
 
   private toggle() {
-    return this.page.locator('.panel-toggle, .dock-toggle').first();
+    // The phone toggle: a button under the timeline in older versions, the bottom sheet's handle since 0.7.
+    return this.page.locator('.panel-toggle, .dock-toggle, .sheet-handle').first();
   }
 
   private async visible(locator: ReturnType<Page['locator']>): Promise<boolean> {
@@ -211,12 +212,44 @@ export class Ui {
   async requireConstruction(): Promise<void> {
     await this.openTab('trains');
     const group = this.page.getByRole('group', { name: 'שכבות בנייה' });
-    if ((await group.count()) === 0) throw new NotApplicable('this version has no construction layers');
+    if ((await group.count()) > 0) return;
+    // Since 0.7 the layer toggles are in the layers picker on the map.
+    const picker = this.page.getByRole('button', { name: 'שכבות', exact: true });
+    if ((await picker.count()) === 0) throw new NotApplicable('this version has no construction layers');
+    await picker.click();
+    const found = (await group.count()) > 0;
+    await this.page.keyboard.press('Escape');
+    if (!found) throw new NotApplicable('this version has no construction layers');
+  }
+
+  /** Opens the layers picker on the map. */
+  async openLayers(): Promise<void> {
+    const picker = this.page.getByRole('button', { name: 'שכבות', exact: true });
+    if ((await picker.count()) === 0) throw new NotApplicable('this version has no layers picker');
+    await picker.click();
+    await this.page.getByRole('region', { name: 'שכבות' }).waitFor({ timeout: 5000 });
+  }
+
+  /** Opens the "about" dialog from the top strip. */
+  async openAbout(): Promise<void> {
+    const about = this.page.getByRole('button', { name: 'אודות המפה' });
+    if ((await about.count()) === 0) throw new NotApplicable('this version has no about dialog');
+    await about.click();
+    await this.page.getByRole('dialog', { name: 'אודות המפה' }).waitFor({ timeout: 5000 });
   }
 
   /** Jumps the timeline to a milestone from the side panel (e.g. "ללא מועד"). */
   async goToMilestone(label: string): Promise<void> {
     await this.openTab('trains');
+    // Since 0.7 milestones and events are one list, "ציר האירועים", whose buttons start with the date.
+    const list = this.page.getByRole('group', { name: 'ציר האירועים' });
+    if ((await list.count()) > 0) {
+      await list
+        .getByRole('button', { name: new RegExp(label) })
+        .first()
+        .click();
+      return;
+    }
     await this.page.getByRole('group', { name: 'אבני דרך' }).getByRole('button', { name: label }).click();
   }
 
@@ -294,6 +327,29 @@ export const SCENARIOS: readonly Scenario[] = [
       await ui.closePanel();
       await ui.focusMap(32.0665, 34.7725, 16);
     },
+  },
+  {
+    id: 'layers-picker',
+    title: 'Layers picker open on the map (lines and city construction)',
+    run: async (ui) => {
+      await ui.closePanel();
+      await ui.openLayers();
+    },
+  },
+  {
+    id: 'what-changed',
+    title: 'Moved from today to mid 2028 (Purple Line opens): the "what changed" note',
+    run: async (ui) => {
+      const note = ui.page.getByRole('status', { name: 'מה השתנה' });
+      await ui.goToMilestone('2028Q2');
+      if ((await note.count()) === 0) throw new NotApplicable('this version has no "what changed" note');
+      await ui.closePanel();
+    },
+  },
+  {
+    id: 'about-dialog',
+    title: 'The "about" dialog: sources, dates, zones and how to report a mistake',
+    run: (ui) => ui.openAbout(),
   },
   {
     id: 'trains-tab',
