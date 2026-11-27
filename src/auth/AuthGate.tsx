@@ -1,9 +1,10 @@
-import { signInWithPopup, signOut } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithCredential, signInWithPopup, signOut } from 'firebase/auth';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { App } from '../App.tsx';
 import type { Network } from '../data/schema.ts';
 import { AdminPanel } from './AdminPanel.tsx';
 import type { FirebaseServices } from './firebase.ts';
+import { GoogleSignInButton } from './GoogleSignInButton.tsx';
 import { useAccess, type Access } from './useAccess.ts';
 import { saveTimelinePosition } from './users.ts';
 
@@ -23,13 +24,14 @@ export function Screen({ title, children }: { title: string; children?: React.Re
 
 export interface AccessScreenProps {
   readonly access: Exclude<Access, { kind: 'approved' }>;
-  readonly onSignIn: () => void;
+  /** The sign-in control shown to signed-out visitors. */
+  readonly signIn: React.ReactNode;
   readonly onSignOut: () => void;
   readonly signInError: string | null;
 }
 
 /** Everything a visitor sees before they are approved. */
-export function AccessScreen({ access, onSignIn, onSignOut, signInError }: AccessScreenProps) {
+export function AccessScreen({ access, signIn, onSignOut, signInError }: AccessScreenProps) {
   switch (access.kind) {
     case 'loading':
       return <Screen title="טוען…" />;
@@ -37,9 +39,7 @@ export function AccessScreen({ access, onSignIn, onSignOut, signInError }: Acces
       return (
         <Screen title="הרכבת הקלה והמטרו בגוש דן">
           <p>הגישה לאתר מוגבלת. התחברו עם חשבון Google כדי לבקש גישה.</p>
-          <button type="button" className="btn primary" onClick={onSignIn}>
-            התחברות עם Google
-          </button>
+          {signIn}
           {signInError !== null && <p role="alert">{signInError}</p>}
         </Screen>
       );
@@ -127,23 +127,50 @@ function SignedInApp({
   );
 }
 
-export function AuthGate({ fb, network }: { fb: FirebaseServices; network: Network }) {
+function PopupSignInButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button type="button" className="btn primary" onClick={onClick}>
+      התחברות עם Google
+    </button>
+  );
+}
+
+export interface AuthGateProps {
+  readonly fb: FirebaseServices;
+  readonly network: Network;
+  /** OAuth web client ID for Google Identity Services; `null` falls back to Firebase's popup. */
+  readonly clientId: string | null;
+}
+
+export function AuthGate({ fb, network, clientId }: AuthGateProps) {
   const access = useAccess(fb);
   const [signInError, setSignInError] = useState<string | null>(null);
-  const onSignIn = useCallback(() => {
+  const fail = useCallback((e: unknown) => {
+    setSignInError(e instanceof Error ? e.message : String(e));
+  }, []);
+  const onPopup = useCallback(() => {
     setSignInError(null);
-    signInWithPopup(fb.auth, fb.provider).catch((e: unknown) => {
-      setSignInError(e instanceof Error ? e.message : String(e));
-    });
-  }, [fb]);
+    signInWithPopup(fb.auth, fb.provider).catch(fail);
+  }, [fb, fail]);
+  const onCredential = useCallback(
+    (idToken: string) => {
+      setSignInError(null);
+      signInWithCredential(fb.auth, GoogleAuthProvider.credential(idToken)).catch(fail);
+    },
+    [fb, fail],
+  );
   const onSignOut = useCallback(() => {
     void signOut(fb.auth);
   }, [fb]);
 
   if (access.kind !== 'approved') {
-    return (
-      <AccessScreen access={access} onSignIn={onSignIn} onSignOut={onSignOut} signInError={signInError} />
-    );
+    const signIn =
+      clientId === null ? (
+        <PopupSignInButton onClick={onPopup} />
+      ) : (
+        <GoogleSignInButton clientId={clientId} onCredential={onCredential} onError={fail} />
+      );
+    return <AccessScreen access={access} signIn={signIn} onSignOut={onSignOut} signInError={signInError} />;
   }
   return (
     <SignedInApp key={access.user.uid} fb={fb} network={network} access={access} onSignOut={onSignOut} />

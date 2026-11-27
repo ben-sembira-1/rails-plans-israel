@@ -24,7 +24,17 @@ data.
    `appId` into GitHub **Settings → Secrets and variables → Actions → Variables** as
    `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`.
    These values are public by design (they end up in the page); the rules are what protect the data.
-7. Re-run the **Release and deploy** workflow (or merge any PR).
+7. **Google sign-in button (needed for phones)**: Firebase's own popup/redirect sign-in runs partly on
+   `<project>.firebaseapp.com`, and mobile browsers that partition cross-site storage fail it with
+   "missing initial state". The site therefore signs in with Google Identity Services on its own page and hands the
+   token to Firebase.
+   - Copy the **Web client ID** from **Authentication → Sign-in method → Google → Web SDK configuration** into a
+     repository variable `VITE_GOOGLE_CLIENT_ID`.
+   - In <https://console.cloud.google.com/apis/credentials> (same project), open that OAuth client ("Web client
+     (auto created by Google Service)") and add to **Authorized JavaScript origins**:
+     `https://ben-sembira-1.github.io` (and `http://localhost:5173` for local development).
+     Without `VITE_GOOGLE_CLIENT_ID`, the site falls back to Firebase's popup (works on desktop only).
+8. Re-run the **Release and deploy** workflow (or merge any PR).
 
 ## Approving people
 
