@@ -46,28 +46,30 @@ export function App({ network, initialTime, onTimeChange, headerActions, page }:
       <TopBar time={time} actions={headerActions} />
       {page ?? (
         <>
-          <TimelineBar
-            time={time}
-            markers={markers}
-            onTimeChange={setTime}
-            panelOpen={panelOpen}
-            panelId={panelId}
-            onTogglePanel={() => {
-              setPanelOpen((o) => !o);
-            }}
-          />
           <div className="workspace">
-            <SidePanel
-              id={panelId}
-              open={panelOpen}
-              time={time}
-              events={events}
-              sections={network.sections}
-              sites={network.sites}
-              hidden={hidden}
-              onTimeChange={setTime}
-              onToggleLayer={toggleLayer}
-            />
+            <div className="side-column">
+              <TimelineBar
+                time={time}
+                markers={markers}
+                onTimeChange={setTime}
+                panelOpen={panelOpen}
+                panelId={panelId}
+                onTogglePanel={() => {
+                  setPanelOpen((o) => !o);
+                }}
+              />
+              <SidePanel
+                id={panelId}
+                open={panelOpen}
+                time={time}
+                events={events}
+                sections={network.sections}
+                sites={network.sites}
+                hidden={hidden}
+                onTimeChange={setTime}
+                onToggleLayer={toggleLayer}
+              />
+            </div>
             <div className="map-area">
               <MapView network={network} time={time} hidden={hidden} />
             </div>

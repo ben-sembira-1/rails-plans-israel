@@ -88,6 +88,16 @@ describe('App', () => {
     expect(purple).toHaveAttribute('aria-pressed', 'true');
   });
 
+  it('jumps back to today from the "today" marker', async () => {
+    render(<App network={NETWORK} initialTime={2030} />);
+    const today = screen.getByRole('button', { name: '2026Q4 · היום' });
+    expect(today).toHaveClass('today');
+    expect(today).toHaveAttribute('tabindex', '0');
+    await userEvent.click(today);
+    expect(screen.getByTestId('map')).toHaveAttribute('data-time', '2026.75');
+    expect(today).toHaveAttribute('aria-pressed', 'true');
+  });
+
   it('opens and closes the side panel (phone layout)', async () => {
     render(<App network={NETWORK} />);
     const toggle = screen.getByRole('button', { name: /מקרא ואירועים/ });

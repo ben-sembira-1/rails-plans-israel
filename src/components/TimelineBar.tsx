@@ -37,19 +37,19 @@ function Track({ time, markers, onTimeChange }: Pick<TimelineBarProps, 'time' | 
             <button
               type="button"
               key={m.time}
-              className={['marker', m.main ? 'main' : '', m.side ?? '', on ? 'on' : '']
+              className={['marker', m.kind === 'milestone' ? 'main' : m.kind, m.side, m.edge, on ? 'on' : '']
                 .filter(Boolean)
                 .join(' ')}
               style={{ '--pos': markerPosition(m.time) } as React.CSSProperties}
               aria-label={`${formatTime(m.time)} · ${m.label}`}
               aria-pressed={on}
               title={`${formatTime(m.time)} · ${m.label}`}
-              tabIndex={-1}
+              tabIndex={m.kind === 'today' ? 0 : -1}
               onClick={() => {
                 onTimeChange(m.time);
               }}
             >
-              {m.main && (
+              {m.kind !== 'event' && (
                 <span className="marker-label" dir="auto">
                   {m.label}
                 </span>
@@ -62,7 +62,10 @@ function Track({ time, markers, onTimeChange }: Pick<TimelineBarProps, 'time' | 
   );
 }
 
-/** The timeline strip under the top bar: previous/next, the current time and the bar with its markers. */
+/**
+ * The timeline: previous/next, the current time and caption, then the bar with its markers. On desktop it heads
+ * the side panel; on narrow screens it spans the page under the top strip.
+ */
 export function TimelineBar({
   time,
   markers,
@@ -75,6 +78,8 @@ export function TimelineBar({
   const next = markers.find((m) => m.time > time);
   const milestone = milestoneAt(time);
   const label = eventLabel(time);
+  // The time itself is shown next to the buttons.
+  const caption = milestone?.caption ?? label ?? '';
 
   return (
     <section className="timeline" aria-label="ציר זמן">
@@ -108,11 +113,8 @@ export function TimelineBar({
         <output className="now" dir="ltr">
           {formatTime(time)}
         </output>
-        <Track time={time} markers={markers} onTimeChange={onTimeChange} />
-      </div>
-      <div className="caption-row">
-        <div className="caption">
-          {milestone ? milestone.caption : `${formatTime(time)}${label === undefined ? '' : ` · ${label}`}`}
+        <div className="caption" title={caption}>
+          {caption}
         </div>
         <button
           type="button"
@@ -124,6 +126,7 @@ export function TimelineBar({
           מקרא ואירועים {panelOpen ? '▴' : '▾'}
         </button>
       </div>
+      <Track time={time} markers={markers} onTimeChange={onTimeChange} />
     </section>
   );
 }
