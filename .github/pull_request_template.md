@@ -9,5 +9,5 @@
 ## Regression
 
 <!-- 3. Paste regression-output/pr-regression.md and fill in the evaluation:
-     - "Claude evaluated the regression images and compared them with <latest>, <previous minor>, <week-ago>."
+     - "Claude evaluated the regression images and compared them with master @ <commit>."
      - every difference found per scenario and layout, and whether it is intended -->

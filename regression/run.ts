@@ -1,6 +1,6 @@
 /**
  * Regression screenshots: every scenario in regression/scenarios.ts, in every layout, for the working tree and
- * for the baseline releases picked by regression/refs.ts; then one comparison sheet per scenario and layout.
+ * for `master` (origin/master, fetched first); then one comparison sheet per scenario and layout.
  *
  *   npm run regression                                # working tree + baselines
  *   npm run regression -- --assets <url> --jobs 8     # PR markdown with image links under <url>; 8 parallel tabs
@@ -14,7 +14,8 @@
  * - one static server on http://localhost:5173 (the port the local Google Maps key allows) serves them all, at
  *   /<version>/;
  * - every version × layout × scenario is captured in its own browser tab, several tabs at a time.
- * Without Firebase, places are kept in memory. The Maps key comes from .env.local. Release screenshots are cached.
+ * Without Firebase, places are kept in memory. The Maps key comes from .env.local. master's screenshots are cached
+ * per commit.
  */
 import { execFile, execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -22,7 +23,6 @@ import { createServer, type Server } from 'node:http';
 import { extname, join, normalize, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { chromium, type Browser, type Page } from '@playwright/test';
-import { pickBaselines, type Baseline } from './refs.ts';
 import { LAYOUTS, NotApplicable, SCENARIOS, Ui, type Layout, type Scenario } from './scenarios.ts';
 
 const ROOT = resolve(import.meta.dirname, '..');
@@ -33,6 +33,12 @@ const run = promisify(execFile);
 
 function log(line: string): void {
   process.stdout.write(`${line}\n`);
+}
+
+/** The branch a PR is compared with, pinned to the commit it pointed to when the run started. */
+interface Baseline {
+  readonly ref: string;
+  readonly commit: string;
 }
 
 interface Version {
@@ -51,6 +57,8 @@ interface Result {
 
 interface Manifest {
   readonly label: string;
+  /** For the baseline: the commit the screenshots were taken from. */
+  readonly commit?: string;
   readonly results: readonly Result[];
   readonly error?: string;
 }
@@ -101,7 +109,7 @@ async function portFree(): Promise<boolean> {
 async function build(v: Version): Promise<void> {
   if (v.baseline) {
     rmSync(v.dir, { recursive: true, force: true });
-    git('worktree', 'add', '--detach', v.dir, v.baseline.tag);
+    git('worktree', 'add', '--detach', v.dir, v.baseline.commit);
     await run('npm', ['ci', '--no-audit', '--no-fund', '--ignore-scripts'], { cwd: v.dir });
   }
   const outDir = join(BUILDS, v.label);
@@ -260,9 +268,7 @@ function prMarkdown(assets: string, versions: readonly Version[], current: Manif
     });
     return `| ${s.title} | ${cells.join(' | ')} |`;
   });
-  const baselines = versions
-    .filter((v) => v.baseline)
-    .map((v) => `\`${v.label}\` (${v.title.toLowerCase()})`);
+  const baselines = versions.filter((v) => v.baseline).map((v) => `\`${v.title}\``);
   const sheets = LAYOUTS.flatMap((l) =>
     SCENARIOS.map((s) => `**${s.title} — ${l.title}**<br>${img(`compare/${s.id}-${l.id}.png`, 900)}`),
   );
@@ -289,29 +295,25 @@ async function main(): Promise<void> {
   if (!(await portFree())) throw new Error(`port ${String(PORT)} is in use; stop the dev server first`);
   const started = Date.now();
   const jobs = Math.max(1, Number(arg('--jobs') ?? 8));
-  const tags = git('tag', '--merged', 'HEAD', '--format=%(refname:short) %(creatordate:iso-strict)')
-    .split('\n')
-    .filter(Boolean)
-    .map((line) => {
-      const [name = '', date = ''] = line.split(' ');
-      return { name, date: new Date(date) };
-    });
+  git('fetch', '--quiet', 'origin', 'master');
+  const master: Baseline = { ref: 'origin/master', commit: git('rev-parse', 'origin/master') };
   const versions: Version[] = [
     { label: 'current', title: 'This PR', dir: ROOT, baseline: null },
-    ...pickBaselines(tags, new Date()).map((b) => ({
-      label: b.tag,
-      title: b.title,
-      dir: join(OUT, '.worktrees', b.tag),
-      baseline: b,
-    })),
+    {
+      label: 'master',
+      title: `master @ ${master.commit.slice(0, 7)}`,
+      dir: join(OUT, '.worktrees', 'master'),
+      baseline: master,
+    },
   ];
 
-  // Releases never change, so their screenshots are reused.
+  // master's screenshots are reused while it points to the same commit.
   const cached = new Map<string, Manifest>();
   for (const v of versions) {
     const file = join(OUT, v.label, 'manifest.json');
-    if (v.baseline && existsSync(file))
-      cached.set(v.label, JSON.parse(readFileSync(file, 'utf8')) as Manifest);
+    if (!v.baseline || !existsSync(file)) continue;
+    const m = JSON.parse(readFileSync(file, 'utf8')) as Manifest;
+    if (m.commit === v.baseline.commit) cached.set(v.label, m);
   }
   const todo = versions.filter((v) => !cached.has(v.label));
   log(`versions: ${versions.map((v) => `${v.label}${cached.has(v.label) ? ' (cached)' : ''}`).join(', ')}`);
@@ -354,6 +356,7 @@ async function main(): Promise<void> {
       const error = failed.get(v.label);
       const m: Manifest = {
         label: v.label,
+        ...(v.baseline ? { commit: v.baseline.commit } : {}),
         results: shots.filter((x) => x.label === v.label).map((x) => x.result),
         ...(error === undefined ? {} : { error }),
       };

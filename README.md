@@ -54,6 +54,11 @@ Every PR to `master` must bump `version` in `package.json` above the latest `vX.
 (`npm version patch|minor|major --no-git-tag-version`); the `version-check` job fails otherwise. On merge, the
 release workflow tags the commit `vX.Y.Z` and deploys to GitHub Pages. The version is shown next to the title.
 
+## License
+
+All rights reserved; see [LICENSE](LICENSE). No permission is granted to use, copy, modify or distribute this
+repository.
+
 ## Data sources
 
 Planning Administration GIS layers (TAMA 70 and "Hatzav"), NTA (נת״ע) publications and line maps, Hebrew

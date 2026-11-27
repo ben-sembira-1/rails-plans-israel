@@ -19,10 +19,10 @@ Guidance for AI agents working in this repository.
   creation, change the React `key` to recreate the shape.
 - **PRs open as drafts.** Before marking one ready, run the regression (`npm run regression`, see
   [docs/REGRESSION.md](docs/REGRESSION.md)): every scenario in `regression/scenarios.ts`, in a desktop and a phone
-  layout, compared with the latest release, the previous minor release and the release from a week ago (if any).
+  layout, compared with `master`.
   Evaluate every comparison sheet yourself. The PR description is, in order: text; big screenshots of the
   features the PR adds (desktop and phone); a **Regression** section with small images (linking to full size), a
-  statement that you evaluated them and which releases you compared with, and every difference found. Keep
+  statement that you evaluated them and compared them with `master` (and its commit), and every difference found. Keep
   `regression/scenarios.ts` up to date when UI states are added or change.
   `gh` can't upload images, so commit them to the `pr-assets` branch under `pr-<number>/` (a separate orphan
   branch, e.g. via `git worktree`; never force-push it). Images there are stored in Git LFS (its
