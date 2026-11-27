@@ -26,6 +26,7 @@ import {
   statusAt,
 } from '../domain/status.ts';
 import { formatTime, stepBefore } from '../domain/time.ts';
+import { sectionLineStyle, sectionPane } from './sectionStyle.ts';
 
 const CENTER_LAT = 32.07;
 const LABEL_ZOOM = 15;
@@ -83,12 +84,7 @@ function SectionLayer({ section, time, zoom }: { section: Section; time: number;
   const w = lineWeight(section);
   const outer = bandWidthPx(OUTER_M, zoom, CENTER_LAT, 5);
   const inner = bandWidthPx(INNER_M, zoom, CENTER_LAT, 2);
-  const lineStyle =
-    status === 'open'
-      ? { opacity: 1, weight: w }
-      : status === 'none'
-        ? { opacity: 0.45, weight: w - 1, dashArray: '2 9' }
-        : { opacity: 1, weight: w, dashArray: '10 7' };
+  const lineStyle = sectionLineStyle(status, w);
   const round = { lineCap: 'round', lineJoin: 'round' } as const;
   return (
     <>
@@ -124,6 +120,7 @@ interface SectionPathProps {
 function SectionPath({ path, zone, outer, inner, section, status, lineStyle, casing }: SectionPathProps) {
   const positions = path as [number, number][];
   const round = { lineCap: 'round', lineJoin: 'round', interactive: false } as const;
+  const pane = sectionPane(status);
   return (
     <>
       {zone !== undefined && (
@@ -140,13 +137,16 @@ function SectionPath({ path, zone, outer, inner, section, status, lineStyle, cas
           />
         </>
       )}
+      {/* Keyed by pane: a Leaflet path can't move between panes, so it is recreated instead. */}
       <Polyline
-        pane={status === 'none' ? 'future' : 'lines'}
+        key={`casing-${pane}`}
+        pane={pane}
         positions={positions}
         pathOptions={{ ...casing, color: '#fff', interactive: false }}
       />
       <Polyline
-        pane={status === 'none' ? 'future' : 'lines'}
+        key={`line-${pane}`}
+        pane={pane}
         positions={positions}
         pathOptions={{ ...lineStyle, color: LINES[section.line].color }}
       >
@@ -264,7 +264,14 @@ function StationMarker({ station, time, label }: { station: Station; time: numbe
         </div>
       </Popup>
       {label && (
-        <Tooltip permanent direction="right" offset={[9, 0]} className={`lbl${open ? '' : ' fut'}`}>
+        // Leaflet reads a tooltip's className only on creation, so recreate it when the station opens.
+        <Tooltip
+          key={open ? 'open' : 'future'}
+          permanent
+          direction="right"
+          offset={[9, 0]}
+          className={`lbl${open ? '' : ' fut'}`}
+        >
           {station.name}
         </Tooltip>
       )}
