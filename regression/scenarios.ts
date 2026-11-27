@@ -83,13 +83,22 @@ export class Ui {
   async addSamplePlace(): Promise<void> {
     const search = this.page.locator('gmp-place-autocomplete');
     if ((await search.count()) === 0) throw new NotApplicable('this version has no place search');
-    await search.click();
-    await this.page.keyboard.type('דיזנגוף סנטר', { delay: 40 });
-    await this.page.waitForTimeout(2000);
-    await this.page.keyboard.press('ArrowDown');
-    await this.page.keyboard.press('Enter');
     const save = this.page.getByRole('button', { name: 'שמירה כמקום מעניין' });
-    await save.waitFor({ timeout: 15000 });
+    // Google's suggestions can be slow (several tabs search at once), so pick the first one and retry if needed.
+    for (let attempt = 1; ; attempt++) {
+      await search.click();
+      await this.page.keyboard.press('ControlOrMeta+A');
+      await this.page.keyboard.type('דיזנגוף סנטר', { delay: 40 });
+      await this.page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => undefined);
+      await this.page.keyboard.press('ArrowDown');
+      await this.page.keyboard.press('Enter');
+      try {
+        await save.waitFor({ timeout: 8000 });
+        break;
+      } catch (e) {
+        if (attempt === 3) throw e;
+      }
+    }
     await save.click();
     await this.page.getByRole('textbox', { name: 'הערה חדשה' }).waitFor({ timeout: 10000 });
   }
@@ -99,7 +108,7 @@ export class Ui {
     const details = this.page.getByRole('button', { name: 'פרטים מגוגל' });
     if ((await details.count()) === 0) throw new NotApplicable('this version has no Google details panel');
     await details.first().click();
-    await this.page.waitForTimeout(4000);
+    await this.page.locator('gmp-place-details').waitFor({ timeout: 10000 });
   }
 }
 

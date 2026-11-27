@@ -2,25 +2,34 @@
  * Regression screenshots: every scenario in regression/scenarios.ts, in every layout, for the working tree and
  * for the baseline releases picked by regression/refs.ts; then one comparison sheet per scenario and layout.
  *
- *   npm run regression                      # working tree + baselines
- *   npm run regression -- --assets <url>    # also write the PR markdown with image links under <url>
+ *   npm run regression                                # working tree + baselines
+ *   npm run regression -- --assets <url> --jobs 8     # PR markdown with image links under <url>; 8 parallel tabs
  *
  * Output (git-ignored): regression-output/<version>/<scenario>-<layout>.png, manifest.json per version,
  * regression-output/compare/<scenario>-<layout>.png and regression-output/pr-regression.md.
  *
- * Every version runs as a local dev server on http://localhost:5173 (the port the local Google Maps key allows),
- * without Firebase, so places are kept in memory. The Maps key comes from .env.local.
+ * How it runs, fast:
+ * - every version is built in development mode (so it opens without sign-in, like `npm run dev`) under its own
+ *   path, and the builds are made in parallel;
+ * - one static server on http://localhost:5173 (the port the local Google Maps key allows) serves them all, at
+ *   /<version>/;
+ * - every version × layout × scenario is captured in its own browser tab, several tabs at a time.
+ * Without Firebase, places are kept in memory. The Maps key comes from .env.local. Release screenshots are cached.
  */
-import { spawn, execFileSync, type ChildProcess } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
-import { chromium, type Browser } from '@playwright/test';
+import { execFile, execFileSync } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { createServer, type Server } from 'node:http';
+import { extname, join, normalize, resolve } from 'node:path';
+import { promisify } from 'node:util';
+import { chromium, type Browser, type Page } from '@playwright/test';
 import { pickBaselines, type Baseline } from './refs.ts';
-import { LAYOUTS, NotApplicable, SCENARIOS, Ui } from './scenarios.ts';
+import { LAYOUTS, NotApplicable, SCENARIOS, Ui, type Layout, type Scenario } from './scenarios.ts';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const OUT = join(ROOT, 'regression-output');
+const BUILDS = join(OUT, '.builds');
 const PORT = 5173;
+const run = promisify(execFile);
 
 function log(line: string): void {
   process.stdout.write(`${line}\n`);
@@ -52,13 +61,14 @@ function arg(name: string): string | null {
 }
 
 function git(...args: string[]): string {
-  return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' }).trim();
+  return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 }
 
 /** Only the Google Maps settings from .env.local; Firebase is blanked so every version opens without sign-in. */
-function serverEnv(): NodeJS.ProcessEnv {
+function buildEnv(): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {
     ...process.env,
+    NODE_ENV: 'development',
     VITE_FIREBASE_API_KEY: '',
     VITE_FIREBASE_AUTH_DOMAIN: '',
     VITE_FIREBASE_PROJECT_ID: '',
@@ -84,122 +94,119 @@ async function portFree(): Promise<boolean> {
   }
 }
 
-/** Starts the version's dev server and resolves with the app URL. */
-async function startServer(dir: string): Promise<{ server: ChildProcess; url: string }> {
-  const server = spawn('npx', ['vite', '--port', String(PORT), '--strictPort'], {
-    cwd: dir,
-    env: serverEnv(),
-    stdio: 'ignore',
-    detached: true,
-  });
-  const deadline = Date.now() + 60_000;
-  while (Date.now() < deadline) {
-    for (const path of ['/rails-plans-israel/', '/']) {
-      try {
-        const res = await fetch(`http://localhost:${String(PORT)}${path}`, {
-          signal: AbortSignal.timeout(2000),
-        });
-        if (res.ok) return { server, url: `http://localhost:${String(PORT)}${path}` };
-      } catch {
-        // not up yet
-      }
-    }
-    await new Promise((r) => setTimeout(r, 500));
+/**
+ * Builds a version under /<label>/. A development-mode build keeps `import.meta.env.DEV`, so every version (old
+ * releases included) opens the map without Firebase.
+ */
+async function build(v: Version): Promise<void> {
+  if (v.baseline) {
+    rmSync(v.dir, { recursive: true, force: true });
+    git('worktree', 'add', '--detach', v.dir, v.baseline.tag);
+    await run('npm', ['ci', '--no-audit', '--no-fund', '--ignore-scripts'], { cwd: v.dir });
   }
-  stopServer(server);
-  throw new Error('the dev server did not start');
+  const outDir = join(BUILDS, v.label);
+  await run(
+    'npx',
+    ['vite', 'build', '--mode', 'development', '--base', `/${v.label}/`, '--outDir', outDir, '--emptyOutDir'],
+    { cwd: v.dir, env: buildEnv(), maxBuffer: 64 * 1024 * 1024 },
+  );
 }
 
-function stopServer(server: ChildProcess): void {
-  if (server.pid !== undefined) {
-    try {
-      process.kill(-server.pid, 'SIGTERM');
-    } catch {
-      // already gone
-    }
-  }
-}
-
-async function capture(browser: Browser, url: string, outDir: string): Promise<Result[]> {
-  mkdirSync(outDir, { recursive: true });
-  const results: Result[] = [];
-  for (const layout of LAYOUTS) {
-    for (const scenario of SCENARIOS) {
-      const context = await browser.newContext({
-        viewport: { width: layout.width, height: layout.height },
-        locale: 'he-IL',
-      });
-      const page = await context.newPage();
-      const file = join(outDir, `${scenario.id}-${layout.id}.png`);
-      try {
-        await page.goto(url, { waitUntil: 'load' });
-        await page.waitForSelector('#root > *', { timeout: 20000 });
-        await page.waitForTimeout(3500);
-        await scenario.run(new Ui(page, layout));
-        // Let the map redraw at its new size (panels change its width) and load the tiles.
-        await page.waitForTimeout(4000);
-        await page.screenshot({ path: file });
-        results.push({ scenario: scenario.id, layout: layout.id, status: 'ok', note: '' });
-      } catch (e) {
-        const na = e instanceof NotApplicable;
-        if (existsSync(file)) rmSync(file);
-        results.push({
-          scenario: scenario.id,
-          layout: layout.id,
-          status: na ? 'n/a' : 'error',
-          note: e instanceof Error ? (e.message.split('\n')[0] ?? '') : String(e),
-        });
-      } finally {
-        await context.close();
-      }
-      const last = results[results.length - 1];
-      log(`  ${layout.id} ${scenario.id}: ${last?.status ?? '?'} ${last?.note ?? ''}`);
-    }
-  }
-  return results;
-}
-
-async function runVersion(browser: Browser, v: Version): Promise<Manifest> {
-  const outDir = join(OUT, v.label);
-  const manifestFile = join(outDir, 'manifest.json');
-  // Releases never change, so their screenshots are reused.
-  if (v.baseline && existsSync(manifestFile)) {
-    log(`${v.label}: cached`);
-    return JSON.parse(readFileSync(manifestFile, 'utf8')) as Manifest;
-  }
-  log(`${v.label}: ${v.title}`);
-  let manifest: Manifest;
+function removeWorktree(v: Version): void {
+  if (!v.baseline) return;
   try {
-    if (v.baseline) {
-      rmSync(v.dir, { recursive: true, force: true });
-      git('worktree', 'add', '--detach', v.dir, v.baseline.tag);
-      execFileSync('npm', ['ci', '--no-audit', '--no-fund', '--ignore-scripts'], {
-        cwd: v.dir,
-        stdio: 'ignore',
-      });
-    }
-    const { server, url } = await startServer(v.dir);
-    try {
-      manifest = { label: v.label, results: await capture(browser, url, outDir) };
-    } finally {
-      stopServer(server);
-      await new Promise((r) => setTimeout(r, 1000));
-    }
-  } catch (e) {
-    manifest = { label: v.label, results: [], error: e instanceof Error ? e.message : String(e) };
-    log(`  failed: ${manifest.error ?? ''}`);
-  } finally {
-    if (v.baseline) {
-      try {
-        git('worktree', 'remove', '--force', v.dir);
-      } catch {
-        // already removed
-      }
-    }
+    git('worktree', 'remove', '--force', v.dir);
+  } catch {
+    // already removed
   }
-  mkdirSync(outDir, { recursive: true });
-  writeFileSync(manifestFile, JSON.stringify(manifest, null, 2));
-  return manifest;
+}
+
+const TYPES: Readonly<Record<string, string>> = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript',
+  '.css': 'text/css',
+  '.json': 'application/json',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
+};
+
+/** Serves every build at /<label>/ (unknown paths fall back to the version's index.html). */
+function serveBuilds(): Promise<Server> {
+  const server = createServer((req, res) => {
+    const path = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname);
+    let file = normalize(join(BUILDS, path));
+    const version = path.split('/')[1] ?? '';
+    if (!file.startsWith(BUILDS) || version === '') {
+      res.writeHead(404).end();
+      return;
+    }
+    if (!existsSync(file) || statSync(file).isDirectory()) file = join(BUILDS, version, 'index.html');
+    if (!existsSync(file)) {
+      res.writeHead(404).end();
+      return;
+    }
+    res.writeHead(200, { 'content-type': TYPES[extname(file)] ?? 'application/octet-stream' });
+    res.end(readFileSync(file));
+  });
+  return new Promise((ok) => {
+    server.listen(PORT, () => {
+      ok(server);
+    });
+  });
+}
+
+/** Waits until the page has loaded what it needs: no network requests (map tiles, Google panels) for 500 ms. */
+async function settle(page: Page): Promise<void> {
+  await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => undefined);
+  // One more frame for the map to paint the tiles it just received.
+  await page.waitForTimeout(300);
+}
+
+/** One screenshot, in its own tab (a separate browser context, so the in-memory places don't leak between tabs). */
+async function shoot(browser: Browser, v: Version, layout: Layout, scenario: Scenario): Promise<Result> {
+  const file = join(OUT, v.label, `${scenario.id}-${layout.id}.png`);
+  const context = await browser.newContext({
+    viewport: { width: layout.width, height: layout.height },
+    locale: 'he-IL',
+  });
+  try {
+    const page = await context.newPage();
+    await page.goto(`http://localhost:${String(PORT)}/${v.label}/`, { waitUntil: 'load' });
+    await page.waitForSelector('#root > *', { timeout: 30000 });
+    await settle(page);
+    await scenario.run(new Ui(page, layout));
+    await settle(page);
+    await page.screenshot({ path: file });
+    return { scenario: scenario.id, layout: layout.id, status: 'ok', note: '' };
+  } catch (e) {
+    if (existsSync(file)) rmSync(file);
+    return {
+      scenario: scenario.id,
+      layout: layout.id,
+      status: e instanceof NotApplicable ? 'n/a' : 'error',
+      note: e instanceof Error ? (e.message.split('\n')[0] ?? '') : String(e),
+    };
+  } finally {
+    await context.close();
+  }
+}
+
+/** Runs the tasks with at most `limit` at a time. */
+async function pool<T>(tasks: readonly (() => Promise<T>)[], limit: number): Promise<T[]> {
+  const results: T[] = new Array<T>(tasks.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < tasks.length) {
+      const i = next++;
+      const task = tasks[i];
+      if (task) results[i] = await task();
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, worker));
+  return results;
 }
 
 function cell(m: Manifest, scenario: string, layout: string): string {
@@ -280,6 +287,8 @@ function prMarkdown(assets: string, versions: readonly Version[], current: Manif
 
 async function main(): Promise<void> {
   if (!(await portFree())) throw new Error(`port ${String(PORT)} is in use; stop the dev server first`);
+  const started = Date.now();
+  const jobs = Math.max(1, Number(arg('--jobs') ?? 8));
   const tags = git('tag', '--merged', 'HEAD', '--format=%(refname:short) %(creatordate:iso-strict)')
     .split('\n')
     .filter(Boolean)
@@ -287,20 +296,71 @@ async function main(): Promise<void> {
       const [name = '', date = ''] = line.split(' ');
       return { name, date: new Date(date) };
     });
-  const baselines = pickBaselines(tags, new Date());
   const versions: Version[] = [
     { label: 'current', title: 'This PR', dir: ROOT, baseline: null },
-    ...baselines.map((b) => ({
+    ...pickBaselines(tags, new Date()).map((b) => ({
       label: b.tag,
       title: b.title,
       dir: join(OUT, '.worktrees', b.tag),
       baseline: b,
     })),
   ];
+
+  // Releases never change, so their screenshots are reused.
+  const cached = new Map<string, Manifest>();
+  for (const v of versions) {
+    const file = join(OUT, v.label, 'manifest.json');
+    if (v.baseline && existsSync(file))
+      cached.set(v.label, JSON.parse(readFileSync(file, 'utf8')) as Manifest);
+  }
+  const todo = versions.filter((v) => !cached.has(v.label));
+  log(`versions: ${versions.map((v) => `${v.label}${cached.has(v.label) ? ' (cached)' : ''}`).join(', ')}`);
+
+  const failed = new Map<string, string>();
+  await Promise.all(
+    todo.map(async (v) => {
+      try {
+        await build(v);
+        log(`built ${v.label}`);
+      } catch (e) {
+        failed.set(v.label, e instanceof Error ? (e.message.split('\n')[0] ?? '') : String(e));
+        log(`build failed ${v.label}: ${failed.get(v.label) ?? ''}`);
+      } finally {
+        removeWorktree(v);
+      }
+    }),
+  );
+
+  const server = await serveBuilds();
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   try {
-    const manifests: Manifest[] = [];
-    for (const v of versions) manifests.push(await runVersion(browser, v));
+    const ready = todo.filter((v) => !failed.has(v.label));
+    for (const v of ready) mkdirSync(join(OUT, v.label), { recursive: true });
+    const tasks = ready.flatMap((v) =>
+      LAYOUTS.flatMap((l) =>
+        SCENARIOS.map((s) => async () => {
+          const r = await shoot(browser, v, l, s);
+          log(`  ${v.label} ${l.id} ${s.id}: ${r.status} ${r.note}`);
+          return { label: v.label, result: r };
+        }),
+      ),
+    );
+    log(`capturing ${String(tasks.length)} screenshots, ${String(jobs)} tabs at a time`);
+    const shots = await pool(tasks, jobs);
+
+    const manifests = versions.map((v): Manifest => {
+      const hit = cached.get(v.label);
+      if (hit) return hit;
+      const error = failed.get(v.label);
+      const m: Manifest = {
+        label: v.label,
+        results: shots.filter((x) => x.label === v.label).map((x) => x.result),
+        ...(error === undefined ? {} : { error }),
+      };
+      mkdirSync(join(OUT, v.label), { recursive: true });
+      writeFileSync(join(OUT, v.label, 'manifest.json'), JSON.stringify(m, null, 2));
+      return m;
+    });
     await compareSheets(browser, versions, manifests);
     const assets = arg('--assets');
     const current = manifests[0];
@@ -309,8 +369,9 @@ async function main(): Promise<void> {
     }
   } finally {
     await browser.close();
+    server.close();
   }
-  log(`done: ${OUT}`);
+  log(`done in ${String(Math.round((Date.now() - started) / 1000))}s: ${OUT}`);
 }
 
 await main();

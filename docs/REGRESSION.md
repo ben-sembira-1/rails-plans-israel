@@ -36,8 +36,12 @@ Needs Google Chrome, `npm ci`, and the local Google Maps key in `.env.local` (al
 npm run regression -- --assets https://media.githubusercontent.com/media/ben-sembira-1/rails-plans-israel/pr-assets/pr-<n>/regression
 ```
 
-Every version runs as a local dev server without Firebase (places are kept in memory). The output goes to the
-git-ignored `regression-output/`:
+How it runs: every version is built in development mode (so it opens without sign-in), each under its own path,
+in parallel; one local static server on port 5173 serves them all; and every version × layout × scenario is
+captured in its own Chrome tab, 8 at a time (`--jobs <n>` to change). Places are kept in memory (no Firebase).
+A run takes about a minute when the releases are cached, and about 2–3 minutes from scratch.
+
+The output goes to the git-ignored `regression-output/`:
 
 - `current/` and one folder per release: `<scenario>-<layout>.png` and `manifest.json`;
 - `compare/<scenario>-<layout>.png`: the PR next to each baseline;
