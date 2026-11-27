@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import type { User } from 'firebase/auth';
 import { AdminView } from './AdminPanel.tsx';
 import { AccessScreen } from './AuthGate.tsx';
-import { firebaseConfig } from './firebase.ts';
+import { firebaseConfig, googleClientId } from './firebase.ts';
 import type { UserProfile } from './users.ts';
 
 const user = { uid: 'u1', email: 'someone@example.com' } as User;
@@ -14,7 +14,11 @@ describe('AccessScreen', () => {
     render(
       <AccessScreen
         access={{ kind: 'signedOut' }}
-        onSignIn={onSignIn}
+        signIn={
+          <button type="button" onClick={onSignIn}>
+            התחברות עם Google
+          </button>
+        }
         onSignOut={vi.fn()}
         signInError={null}
       />,
@@ -28,7 +32,7 @@ describe('AccessScreen', () => {
     render(
       <AccessScreen
         access={{ kind: 'pending', user }}
-        onSignIn={vi.fn()}
+        signIn={null}
         onSignOut={vi.fn()}
         signInError={null}
       />,
@@ -42,7 +46,7 @@ describe('AccessScreen', () => {
     render(
       <AccessScreen
         access={{ kind: 'signedOut' }}
-        onSignIn={vi.fn()}
+        signIn={null}
         onSignOut={vi.fn()}
         signInError="popup closed"
       />,
@@ -95,5 +99,15 @@ describe('firebaseConfig', () => {
         VITE_FIREBASE_APP_ID: 'a',
       }),
     ).toEqual({ apiKey: 'k', authDomain: 'd', projectId: 'p', appId: 'a' });
+  });
+});
+
+describe('googleClientId', () => {
+  it('is null when unset or blank, so sign-in falls back to the Firebase popup', () => {
+    expect(googleClientId({})).toBeNull();
+    expect(googleClientId({ VITE_GOOGLE_CLIENT_ID: '  ' })).toBeNull();
+    expect(googleClientId({ VITE_GOOGLE_CLIENT_ID: 'abc.apps.googleusercontent.com' })).toBe(
+      'abc.apps.googleusercontent.com',
+    );
   });
 });

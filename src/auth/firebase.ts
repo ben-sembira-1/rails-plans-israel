@@ -13,6 +13,7 @@ export interface FirebaseEnv {
   readonly VITE_FIREBASE_AUTH_DOMAIN?: string;
   readonly VITE_FIREBASE_PROJECT_ID?: string;
   readonly VITE_FIREBASE_APP_ID?: string;
+  readonly VITE_GOOGLE_CLIENT_ID?: string;
 }
 
 /** The web-app config from the build environment, or `null` if it is incomplete. */
@@ -23,6 +24,15 @@ export function firebaseConfig(env: FirebaseEnv = import.meta.env): FirebaseOpti
   const appId = env.VITE_FIREBASE_APP_ID;
   if (!apiKey || !authDomain || !projectId || !appId) return null;
   return { apiKey, authDomain, projectId, appId };
+}
+
+/**
+ * The OAuth web client ID for Google Identity Services, or `null` to fall back to Firebase's popup flow
+ * (which fails on mobile browsers that partition cross-site storage).
+ */
+export function googleClientId(env: FirebaseEnv = import.meta.env): string | null {
+  const id = env.VITE_GOOGLE_CLIENT_ID?.trim() ?? '';
+  return id === '' ? null : id;
 }
 
 let services: FirebaseServices | null = null;
