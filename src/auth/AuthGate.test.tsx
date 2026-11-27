@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { User } from 'firebase/auth';
 import { AdminView } from './AdminPanel.tsx';
+import { HeaderActions } from './HeaderActions.tsx';
 import { AccessScreen } from './AuthGate.tsx';
 import { firebaseConfig, googleClientId } from './firebase.ts';
 import type { UserProfile } from './users.ts';
@@ -75,9 +76,10 @@ describe('AdminView', () => {
         onApprove={onApprove}
         onRevoke={vi.fn()}
         onReject={vi.fn()}
+        onBack={vi.fn()}
       />,
     );
-    expect(screen.getByText('1 ממתינים')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'ממתינים לאישור 1' })).toBeInTheDocument();
     const pending = screen.getByRole('list', { name: 'ממתינים לאישור' });
     expect(pending).toHaveTextContent('new@example.com');
     const approved = screen.getByRole('list', { name: 'משתמשים מאושרים' });
@@ -109,5 +111,35 @@ describe('googleClientId', () => {
     expect(googleClientId({ VITE_GOOGLE_CLIENT_ID: 'abc.apps.googleusercontent.com' })).toBe(
       'abc.apps.googleusercontent.com',
     );
+  });
+});
+
+describe('HeaderActions', () => {
+  const base = {
+    email: 'me@example.com',
+    adminOpen: false,
+    pendingCount: 2,
+    onAdmin: vi.fn(),
+    onSignOut: vi.fn(),
+  };
+
+  it('shows the admin center button with the pending count to admins only', async () => {
+    const onAdmin = vi.fn();
+    const { rerender } = render(<HeaderActions {...base} isAdmin onAdmin={onAdmin} />);
+    const btn = screen.getByRole('button', { name: /מרכז ניהול/ });
+    expect(screen.getByLabelText('2 ממתינים לאישור')).toBeInTheDocument();
+    await userEvent.click(btn);
+    expect(onAdmin).toHaveBeenCalledOnce();
+    rerender(<HeaderActions {...base} isAdmin={false} />);
+    expect(screen.queryByRole('button', { name: /מרכז ניהול/ })).toBeNull();
+  });
+
+  it('signs out from the account menu', async () => {
+    const onSignOut = vi.fn();
+    render(<HeaderActions {...base} isAdmin={false} onSignOut={onSignOut} />);
+    await userEvent.click(screen.getByLabelText('חשבון'));
+    expect(screen.getByText('me@example.com')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('menuitem', { name: 'התנתקות' }));
+    expect(onSignOut).toHaveBeenCalledOnce();
   });
 });

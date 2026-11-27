@@ -41,18 +41,24 @@ point in time:
 - Clicking a section shows all its phases with their date ranges.
 - A legend explains the styles and lets the user hide individual lines.
 
+### Layout
+
+- A **top strip** with the logo, the app name, the version and the time currently shown on the timeline. Admins
+  also get an **admin center** button (with a pending-requests count) that opens the access-management page; every
+  signed-in user gets an account menu (sign out).
+- The map fills the space between the top strip and the **timeline dock** at the bottom.
+
 ### Timeline
 
-- A slider over time. It moves by **quarter** until 2029Q4 and by **full year** from 2030 (later dates are too
+- A bar over time. It moves by **quarter** until 2029Q4 and by **full year** from 2030 (later dates are too
   uncertain for quarters), followed by a final "no announced date" step where the full network is shown as a
   plain map.
-- A play button that steps from event to event.
-- Two rows of buttons:
-  - **Milestones** – the main openings (2023Q3, 2028Q2, 2028Q4, 2030, 2034–37, no date);
-  - **Works-status changes** – every point in time at which a section's or site's works status changes, plus
-    "today".
-- When the timeline is on a button's time, that button is highlighted.
-- A summary under the buttons lists the sections under heavy and light works at the selected time.
+- **Previous / next** buttons jump to the previous or next event on the bar.
+- **Desktop**: every event is a marker on the bar; the main milestones (2023Q3, 2028Q2, 2028Q4, 2030, 2034–37,
+  no date) are bigger and labelled. The current marker is highlighted. Under the bar: the current caption and the
+  sections under heavy and light works.
+- **Phone**: by default only the bar, previous/next and the caption. An "events and details" toggle opens the
+  milestones, the list of works-status events (buttons) and the works summary.
 - Dates are formatted `YYYYQn` before 2030 and `YYYY` from 2030.
 
 ### Engineering

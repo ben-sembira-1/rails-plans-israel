@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { FirebaseServices } from './firebase.ts';
-import { deleteUser, setApproved, watchAllUsers, type UserProfile } from './users.ts';
+import type { AllUsers } from './useAllUsers.ts';
+import { deleteUser, setApproved, type UserProfile } from './users.ts';
 
 export interface AdminViewProps {
   readonly users: readonly UserProfile[];
@@ -9,94 +10,140 @@ export interface AdminViewProps {
   readonly onApprove: (uid: string) => void;
   readonly onRevoke: (uid: string) => void;
   readonly onReject: (uid: string) => void;
+  readonly onBack: () => void;
 }
 
-function who(u: UserProfile): string {
-  return u.displayName ? `${u.displayName} (${u.email})` : u.email;
+const dateFormat = new Intl.DateTimeFormat('he-IL', { dateStyle: 'medium', timeStyle: 'short' });
+
+function Person({ user }: { user: UserProfile }) {
+  const initial = (user.displayName || user.email).trim().charAt(0).toUpperCase() || '?';
+  return (
+    <div className="person">
+      <span className="avatar" aria-hidden="true">
+        {initial}
+      </span>
+      <div className="person-text">
+        <b dir="auto">{user.displayName || user.email}</b>
+        <span dir="ltr">{user.email}</span>
+        {user.requestedAt !== null && (
+          <span className="muted">נרשם/ה: {dateFormat.format(user.requestedAt)}</span>
+        )}
+      </div>
+    </div>
+  );
 }
 
-export function AdminView({ users, selfUid, error, onApprove, onRevoke, onReject }: AdminViewProps) {
+/** The admin center page: access requests and approved users. */
+export function AdminView({ users, selfUid, error, onApprove, onRevoke, onReject, onBack }: AdminViewProps) {
   const pending = users.filter((u) => !u.approved);
   const approved = users.filter((u) => u.approved && u.uid !== selfUid);
   return (
-    <details className="admin" open={pending.length > 0}>
-      <summary>
-        ניהול גישה {pending.length > 0 && <span className="badge">{pending.length} ממתינים</span>}
-      </summary>
-      {error !== null && <div role="alert">{error}</div>}
-      <div>ממתינים לאישור</div>
-      {pending.length === 0 ? (
-        <div className="muted">אין בקשות חדשות</div>
-      ) : (
-        <ul aria-label="ממתינים לאישור">
-          {pending.map((u) => (
-            <li key={u.uid}>
-              <span dir="auto">{who(u)}</span>
-              <span>
-                <button
-                  type="button"
-                  className="btn small primary"
-                  onClick={() => {
-                    onApprove(u.uid);
-                  }}
-                >
-                  אישור
-                </button>{' '}
-                <button
-                  type="button"
-                  className="btn small"
-                  onClick={() => {
-                    onReject(u.uid);
-                  }}
-                >
-                  דחייה
-                </button>
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-      <div>משתמשים מאושרים</div>
-      <ul aria-label="משתמשים מאושרים">
-        {approved.map((u) => (
-          <li key={u.uid}>
-            <span dir="auto">{who(u)}</span>
-            <button
-              type="button"
-              className="btn small"
-              onClick={() => {
-                onRevoke(u.uid);
-              }}
-            >
-              ביטול גישה
-            </button>
-          </li>
-        ))}
-      </ul>
-    </details>
+    <main className="admin-center">
+      <div className="admin-inner">
+        <div className="admin-title">
+          <h1>מרכז ניהול</h1>
+          <button type="button" className="btn" onClick={onBack}>
+            חזרה למפה
+          </button>
+        </div>
+        {error !== null && (
+          <div className="admin-error" role="alert">
+            {error}
+          </div>
+        )}
+
+        <section className="admin-card" aria-labelledby="pending-title">
+          <h2 id="pending-title">
+            ממתינים לאישור <span className="count">{pending.length}</span>
+          </h2>
+          {pending.length === 0 ? (
+            <p className="muted">אין בקשות חדשות.</p>
+          ) : (
+            <ul aria-label="ממתינים לאישור">
+              {pending.map((u) => (
+                <li key={u.uid}>
+                  <Person user={u} />
+                  <span className="actions">
+                    <button
+                      type="button"
+                      className="btn primary"
+                      onClick={() => {
+                        onApprove(u.uid);
+                      }}
+                    >
+                      אישור
+                    </button>
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={() => {
+                        onReject(u.uid);
+                      }}
+                    >
+                      דחייה
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="admin-card" aria-labelledby="approved-title">
+          <h2 id="approved-title">
+            משתמשים מאושרים <span className="count">{approved.length}</span>
+          </h2>
+          {approved.length === 0 ? (
+            <p className="muted">עדיין אין משתמשים מאושרים מלבדך.</p>
+          ) : (
+            <ul aria-label="משתמשים מאושרים">
+              {approved.map((u) => (
+                <li key={u.uid}>
+                  <Person user={u} />
+                  <span className="actions">
+                    <button
+                      type="button"
+                      className="btn danger"
+                      onClick={() => {
+                        onRevoke(u.uid);
+                      }}
+                    >
+                      ביטול גישה
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+    </main>
   );
 }
 
-export function AdminPanel({ fb, selfUid }: { fb: FirebaseServices; selfUid: string }) {
-  const [users, setUsers] = useState<readonly UserProfile[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  useEffect(
-    () =>
-      watchAllUsers(fb, setUsers, (e) => {
-        setError(e.message);
-      }),
-    [fb],
-  );
+export function AdminCenter({
+  fb,
+  selfUid,
+  all,
+  onBack,
+}: {
+  fb: FirebaseServices;
+  selfUid: string;
+  all: AllUsers;
+  onBack: () => void;
+}) {
+  const [actionError, setActionError] = useState<string | null>(null);
   const run = (p: Promise<void>) => {
+    setActionError(null);
     p.catch((e: unknown) => {
-      setError(e instanceof Error ? e.message : String(e));
+      setActionError(e instanceof Error ? e.message : String(e));
     });
   };
   return (
     <AdminView
-      users={users}
+      users={all.users}
       selfUid={selfUid}
-      error={error}
+      error={actionError ?? all.error}
       onApprove={(uid) => {
         run(setApproved(fb, uid, true));
       }}
@@ -106,6 +153,7 @@ export function AdminPanel({ fb, selfUid }: { fb: FirebaseServices; selfUid: str
       onReject={(uid) => {
         run(deleteUser(fb, uid));
       }}
+      onBack={onBack}
     />
   );
 }

@@ -1,11 +1,16 @@
 import { GoogleAuthProvider, signInWithCredential, signInWithPopup, signOut } from 'firebase/auth';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { App } from '../App.tsx';
+import { Logo } from '../components/Logo.tsx';
+import { APP_NAME } from '../components/TopBar.tsx';
 import type { Network } from '../data/schema.ts';
-import { AdminPanel } from './AdminPanel.tsx';
+import { AdminCenter } from './AdminPanel.tsx';
+import { useAllUsers } from './useAllUsers.ts';
 import type { FirebaseServices } from './firebase.ts';
 import { GoogleSignInButton } from './GoogleSignInButton.tsx';
+import { HeaderActions } from './HeaderActions.tsx';
 import { useAccess, type Access } from './useAccess.ts';
+import { useHashRoute } from './useHashRoute.ts';
 import { saveTimelinePosition } from './users.ts';
 
 /** Saving the timeline position waits for the user to settle on a time. */
@@ -15,6 +20,10 @@ export function Screen({ title, children }: { title: string; children?: React.Re
   return (
     <main className="screen" dir="rtl">
       <div className="card">
+        <div className="card-brand">
+          <Logo size={44} />
+          <span>{APP_NAME}</span>
+        </div>
         <h1>{title}</h1>
         {children}
       </div>
@@ -107,21 +116,38 @@ function SignedInApp({
   const save = useSavePosition(fb, access.user.uid);
   // Restore the position once, when the map first opens.
   const [initialTime] = useState(access.savedTime);
+  const [route, navigate] = useHashRoute();
+  const all = useAllUsers(fb, access.isAdmin);
+  const adminOpen = access.isAdmin && route === 'admin';
+  const pendingCount = all.users.filter((u) => !u.approved).length;
   return (
     <App
       network={network}
       {...(initialTime === null ? {} : { initialTime })}
       onTimeChange={save}
-      panelFooter={
-        <>
-          <div className="account">
-            <span dir="auto">{access.user.email}</span>
-            <button type="button" className="btn small" onClick={onSignOut}>
-              התנתקות
-            </button>
-          </div>
-          {access.isAdmin && <AdminPanel fb={fb} selfUid={access.user.uid} />}
-        </>
+      headerActions={
+        <HeaderActions
+          email={access.user.email ?? ''}
+          isAdmin={access.isAdmin}
+          adminOpen={adminOpen}
+          pendingCount={pendingCount}
+          onAdmin={() => {
+            navigate(adminOpen ? 'map' : 'admin');
+          }}
+          onSignOut={onSignOut}
+        />
+      }
+      page={
+        adminOpen ? (
+          <AdminCenter
+            fb={fb}
+            selfUid={access.user.uid}
+            all={all}
+            onBack={() => {
+              navigate('map');
+            }}
+          />
+        ) : undefined
       }
     />
   );
