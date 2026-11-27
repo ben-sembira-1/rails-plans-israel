@@ -1,142 +1,186 @@
-import { z } from 'zod'
+import { isLineId, type LineId } from '../domain/lines.ts';
 
-/**
- * A date with an explicit precision: `YYYY`, `YYYY-Qn`, `YYYY-MM` or `YYYY-MM-DD`.
- * Planning documents rarely give exact days, so we keep the precision the source used.
- */
-export const DateSpecSchema = z
-  .string()
-  .regex(/^\d{4}(?:-Q[1-4]|-(?:0[1-9]|1[0-2])(?:-(?:0[1-9]|[12]\d|3[01]))?)?$/u, {
-    message: 'Expected YYYY, YYYY-Qn, YYYY-MM or YYYY-MM-DD',
-  })
-export type DateSpec = z.infer<typeof DateSpecSchema>
+/** [latitude, longitude] */
+export type LatLng = readonly [number, number];
 
-/** A pointer into a document listed in references/manifest.json. */
-export const SourceRefSchema = z.strictObject({
-  docId: z.string().min(1),
-  page: z.number().int().positive().optional(),
-  quote: z.string().min(1).optional(),
-  note: z.string().min(1).optional(),
-})
-export type SourceRef = z.infer<typeof SourceRefSchema>
+/** Works status of a section at a point in time. */
+export type WorksStatus = 'none' | 'minor' | 'major' | 'open';
+export const WORKS_STATUSES: readonly WorksStatus[] = ['none', 'minor', 'major', 'open'];
 
-const Sources = z
-  .array(SourceRefSchema)
-  .min(1, { message: 'Every item must cite at least one source' })
+export interface Phase {
+  /** Decimal year the phase starts (2026.75 = 2026Q4); `null` = already in this phase when the timeline starts. */
+  readonly since: number | null;
+  readonly status: WorksStatus;
+  readonly note: string;
+}
 
-const LngLatSchema = z.tuple([z.number().min(-180).max(180), z.number().min(-90).max(90)])
-export type LngLat = z.infer<typeof LngLatSchema>
+export interface Section {
+  readonly id: string;
+  readonly name: string;
+  readonly line: LineId;
+  readonly paths: readonly (readonly LatLng[])[];
+  /** Ordered by `since`; only the first phase may have `since: null`. */
+  readonly phases: readonly Phase[];
+}
 
-export const LineStringSchema = z.strictObject({
-  type: z.literal('LineString'),
-  coordinates: z.array(LngLatSchema).min(2),
-})
+/** A point work site (metro preparatory works before the line-wide heavy works start). */
+export interface Site {
+  readonly id: string;
+  readonly name: string;
+  readonly line: LineId;
+  readonly position: LatLng;
+  readonly approximate: boolean;
+  readonly since: number;
+  readonly note: string;
+}
 
-export const PolygonSchema = z.strictObject({
-  type: z.literal('Polygon'),
-  coordinates: z.array(z.array(LngLatSchema).min(4)).min(1),
-})
+export interface Station {
+  readonly name: string;
+  readonly line: LineId;
+  readonly position: LatLng;
+  /** Decimal year the station opens. */
+  readonly opens: number;
+  readonly approximate: boolean;
+}
 
-export const PhaseKindSchema = z.enum(['planning', 'construction', 'operational'])
-export type PhaseKind = z.infer<typeof PhaseKindSchema>
+export interface RailStation {
+  readonly name: string;
+  readonly position: LatLng;
+}
 
-export const PhaseSchema = z.strictObject({
-  kind: PhaseKindSchema,
-  label: z.string().min(1),
-  start: DateSpecSchema,
-  end: DateSpecSchema.optional(),
-  sources: Sources,
-})
-export type Phase = z.infer<typeof PhaseSchema>
+export interface Network {
+  readonly sections: readonly Section[];
+  readonly sites: readonly Site[];
+  readonly stations: readonly Station[];
+  readonly railStations: readonly RailStation[];
+  /** Israel Railways geometry used until (or instead of) the live OpenStreetMap layer. */
+  readonly railFallback: readonly (readonly LatLng[])[];
+}
 
-export const MilestoneSchema = z.strictObject({
-  date: DateSpecSchema,
-  label: z.string().min(1),
-  sources: Sources,
-})
-export type Milestone = z.infer<typeof MilestoneSchema>
+class SchemaError extends Error {
+  constructor(path: string, expected: string) {
+    super(`network.json: ${path} must be ${expected}`);
+    this.name = 'SchemaError';
+  }
+}
 
-export const WorkAreaSchema = z.strictObject({
-  id: z.string().min(1),
-  name: z.string().min(1),
-  geometry: PolygonSchema,
-  start: DateSpecSchema,
-  end: DateSpecSchema.optional(),
-  sources: Sources,
-})
-export type WorkArea = z.infer<typeof WorkAreaSchema>
+type Obj = Record<string, unknown>;
 
-export const MaterialSchema = z.strictObject({
-  kind: z.enum(['fact', 'quote', 'image', 'table']),
-  title: z.string().min(1),
-  body: z.string().min(1).optional(),
-  /** Path relative to `public/`, e.g. `references/<docId>/page-3.webp`. */
-  image: z.string().min(1).optional(),
-  sources: Sources,
-})
-export type Material = z.infer<typeof MaterialSchema>
+function obj(v: unknown, path: string): Obj {
+  if (typeof v !== 'object' || v === null || Array.isArray(v)) throw new SchemaError(path, 'an object');
+  return v as Obj;
+}
+function arr(v: unknown, path: string): readonly unknown[] {
+  if (!Array.isArray(v)) throw new SchemaError(path, 'an array');
+  return v as readonly unknown[];
+}
+function str(v: unknown, path: string): string {
+  if (typeof v !== 'string' || v.length === 0) throw new SchemaError(path, 'a non-empty string');
+  return v;
+}
+function num(v: unknown, path: string): number {
+  if (typeof v !== 'number' || !Number.isFinite(v)) throw new SchemaError(path, 'a finite number');
+  return v;
+}
+function bool(v: unknown, path: string): boolean {
+  if (typeof v !== 'boolean') throw new SchemaError(path, 'a boolean');
+  return v;
+}
+function line(v: unknown, path: string): LineId {
+  if (!isLineId(v)) throw new SchemaError(path, 'a line id');
+  return v;
+}
+function latLng(v: unknown, path: string): LatLng {
+  const a = arr(v, path);
+  const lat = num(a[0], `${path}[0]`);
+  const lng = num(a[1], `${path}[1]`);
+  // Gush Dan and its surroundings.
+  if (a.length !== 2 || lat < 31.5 || lat > 32.5 || lng < 34.5 || lng > 35.2) {
+    throw new SchemaError(path, '[lat, lng] inside central Israel');
+  }
+  return [lat, lng];
+}
+function path(v: unknown, p: string): readonly LatLng[] {
+  const pts = arr(v, p).map((x, i) => latLng(x, `${p}[${i}]`));
+  if (pts.length < 2) throw new SchemaError(p, 'a path of at least two points');
+  return pts;
+}
+function status(v: unknown, p: string): WorksStatus {
+  const s = WORKS_STATUSES.find((x) => x === v);
+  if (s === undefined) throw new SchemaError(p, `one of ${WORKS_STATUSES.join(', ')}`);
+  return s;
+}
 
-export const StationSchema = z.strictObject({
-  name: z.string().min(1),
-  nameHe: z.string().min(1).optional(),
-  coordinates: LngLatSchema,
-  sources: Sources,
-})
-export type Station = z.infer<typeof StationSchema>
+function phase(v: unknown, p: string): Phase {
+  const o = obj(v, p);
+  return {
+    since: o['since'] === null ? null : num(o['since'], `${p}.since`),
+    status: status(o['status'], `${p}.status`),
+    note: str(o['note'], `${p}.note`),
+  };
+}
 
-export const GeometrySourceSchema = z.strictObject({
-  kind: z.enum(['osm', 'traced', 'approximate']),
-  ref: z.string().min(1),
-  sources: Sources,
-})
+function section(v: unknown, p: string): Section {
+  const o = obj(v, p);
+  const phases = arr(o['phases'], `${p}.phases`).map((x, i) => phase(x, `${p}.phases[${i}]`));
+  if (phases.length === 0) throw new SchemaError(`${p}.phases`, 'non-empty');
+  phases.forEach((ph, i) => {
+    if (i === 0) return;
+    const prevSince = phases[i - 1]?.since ?? null;
+    if (ph.since === null || (prevSince !== null && ph.since <= prevSince)) {
+      throw new SchemaError(`${p}.phases[${i}].since`, 'set and later than the previous phase');
+    }
+  });
+  return {
+    id: str(o['id'], `${p}.id`),
+    name: str(o['name'], `${p}.name`),
+    line: line(o['line'], `${p}.line`),
+    paths: arr(o['paths'], `${p}.paths`).map((x, i) => path(x, `${p}.paths[${i}]`)),
+    phases,
+  };
+}
 
-export const SegmentSchema = z.strictObject({
-  id: z.string().regex(/^[a-z0-9-]+$/u),
-  name: z.string().min(1),
-  geometry: LineStringSchema,
-  geometrySource: GeometrySourceSchema,
-  stations: z.array(StationSchema),
-  phases: z.array(PhaseSchema),
-  milestones: z.array(MilestoneSchema),
-  workAreas: z.array(WorkAreaSchema),
-  materials: z.array(MaterialSchema),
-})
-export type Segment = z.infer<typeof SegmentSchema>
+function site(v: unknown, p: string): Site {
+  const o = obj(v, p);
+  return {
+    id: str(o['id'], `${p}.id`),
+    name: str(o['name'], `${p}.name`),
+    line: line(o['line'], `${p}.line`),
+    position: latLng(o['position'], `${p}.position`),
+    approximate: bool(o['approximate'], `${p}.approximate`),
+    since: num(o['since'], `${p}.since`),
+    note: str(o['note'], `${p}.note`),
+  };
+}
 
-export const LineSchema = z.strictObject({
-  id: z.string().regex(/^[a-z0-9-]+$/u),
-  name: z.string().min(1),
-  nameHe: z.string().min(1),
-  mode: z.enum(['lrt', 'metro', 'brt']),
-  color: z.string().regex(/^#[0-9a-f]{6}$/iu),
-  description: z.string().min(1),
-  sources: Sources,
-  segments: z.array(SegmentSchema).min(1),
-})
-export type Line = z.infer<typeof LineSchema>
+function station(v: unknown, p: string): Station {
+  const o = obj(v, p);
+  return {
+    name: str(o['name'], `${p}.name`),
+    line: line(o['line'], `${p}.line`),
+    position: latLng(o['position'], `${p}.position`),
+    opens: num(o['opens'], `${p}.opens`),
+    approximate: bool(o['approximate'], `${p}.approximate`),
+  };
+}
 
-export const ManifestDocumentSchema = z.strictObject({
-  id: z.string().regex(/^[a-z0-9-]+$/u),
-  title: z.string().min(1),
-  collection: z.string().min(1),
-  /** Repo-relative path under references/raw. */
-  path: z.string().startsWith('references/raw/'),
-  originalUrl: z.url(),
-  sha256: z.string().regex(/^[0-9a-f]{64}$/u),
-  bytes: z.number().int().nonnegative(),
-  retrievedAt: z.iso.date(),
-  pages: z.number().int().positive().optional(),
-})
-export type ManifestDocument = z.infer<typeof ManifestDocumentSchema>
+function railStation(v: unknown, p: string): RailStation {
+  const o = obj(v, p);
+  return { name: str(o['name'], `${p}.name`), position: latLng(o['position'], `${p}.position`) };
+}
 
-/** The subset of manifest entries bundled with the site (src/data/documents.json). */
-export const CitedDocumentSchema = ManifestDocumentSchema.omit({ sha256: true, bytes: true })
-export type CitedDocument = z.infer<typeof CitedDocumentSchema>
-
-export const CitedDocumentsSchema = z.strictObject({ documents: z.array(CitedDocumentSchema) })
-
-export const ManifestSchema = z.strictObject({
-  updatedAt: z.iso.date(),
-  documents: z.array(ManifestDocumentSchema),
-})
-export type Manifest = z.infer<typeof ManifestSchema>
+/** Validates raw JSON and returns it typed. Throws a `SchemaError` naming the first offending path. */
+export function parseNetwork(raw: unknown): Network {
+  const o = obj(raw, '$');
+  const network: Network = {
+    sections: arr(o['sections'], 'sections').map((x, i) => section(x, `sections[${i}]`)),
+    sites: arr(o['sites'], 'sites').map((x, i) => site(x, `sites[${i}]`)),
+    stations: arr(o['stations'], 'stations').map((x, i) => station(x, `stations[${i}]`)),
+    railStations: arr(o['railStations'], 'railStations').map((x, i) => railStation(x, `railStations[${i}]`)),
+    railFallback: arr(o['railFallback'], 'railFallback').map((x, i) => path(x, `railFallback[${i}]`)),
+  };
+  const ids = [...network.sections.map((s) => s.id), ...network.sites.map((s) => s.id)];
+  const dup = ids.find((id, i) => ids.indexOf(id) !== i);
+  if (dup !== undefined) throw new SchemaError(`id "${dup}"`, 'unique');
+  return network;
+}

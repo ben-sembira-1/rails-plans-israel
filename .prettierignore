@@ -1,8 +1,5 @@
-node_modules
 dist
+node_modules
 coverage
-references/raw
-public/references
 package-lock.json
-.incoming
-.venv
+src/data/network.json

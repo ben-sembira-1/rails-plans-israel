@@ -1,5 +1,0 @@
-[files]
-extend-exclude = ["references/", "public/references/", "package-lock.json", "*.svg"]
-
-[default.extend-identifiers]
-CPY001 = "CPY001"

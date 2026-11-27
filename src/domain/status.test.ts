@@ -1,93 +1,65 @@
-import type { Segment } from '../data/schema.ts'
+import type { Section, Site } from '../data/schema.ts';
+import { isSiteActive, phaseAt, phaseRange, statusAt, worksAt } from './status.ts';
 
-import { dateSpecToTime } from './dates.ts'
-import { activeWorkAreas, segmentStatusAt, timelineBounds } from './status.ts'
-
-const src = [{ docId: 'doc' }]
-
-const segment: Segment = {
-  id: 'seg',
-  name: 'Segment',
-  geometry: {
-    type: 'LineString',
-    coordinates: [
-      [34.78, 32.08],
-      [34.79, 32.09],
+const allenby: Section = {
+  id: 'allenby',
+  name: 'אלנבי',
+  line: 'purple',
+  paths: [
+    [
+      [32.06, 34.77],
+      [32.07, 34.78],
     ],
-  },
-  geometrySource: { kind: 'approximate', ref: 'test', sources: src },
-  stations: [],
+  ],
   phases: [
-    { kind: 'planning', label: 'Planning', start: '2020', end: '2024', sources: src },
-    { kind: 'construction', label: 'Works', start: '2025-03', end: '2029', sources: src },
-    { kind: 'operational', label: 'Opening', start: '2030-Q2', sources: src },
+    { since: null, status: 'minor', note: 'a' },
+    { since: 2024.5, status: 'major', note: 'b' },
+    { since: 2028.25, status: 'open', note: 'c' },
   ],
-  milestones: [],
-  workAreas: [
-    {
-      id: 'wa',
-      name: 'Station box',
-      geometry: {
-        type: 'Polygon',
-        coordinates: [
-          [
-            [34.78, 32.08],
-            [34.781, 32.08],
-            [34.781, 32.081],
-            [34.78, 32.08],
-          ],
-        ],
-      },
-      start: '2025-06',
-      end: '2028',
-      sources: src,
-    },
-  ],
-  materials: [],
-}
+};
 
-const at = (spec: string): number => dateSpecToTime(spec, 'start')
+const site: Site = {
+  id: 'habima',
+  name: 'הבימה',
+  line: 'M2',
+  position: [32.07, 34.78],
+  approximate: false,
+  since: 2026.75,
+  note: 'n',
+};
 
-describe('segmentStatusAt', () => {
-  it('is planned before construction starts', () => {
-    expect(segmentStatusAt(segment, at('2025-02'))).toBe('planned')
-  })
-  it('is under construction once works start', () => {
-    expect(segmentStatusAt(segment, at('2025-03'))).toBe('construction')
-  })
-  it('is operational once opened', () => {
-    expect(segmentStatusAt(segment, at('2030-04'))).toBe('operational')
-  })
-  it('is planned when no phases exist', () => {
-    expect(segmentStatusAt({ ...segment, phases: [] }, at('2040'))).toBe('planned')
-  })
-})
+describe('phaseAt / statusAt', () => {
+  it('uses the first phase before any dated phase', () => {
+    expect(statusAt(allenby, 2023.5)).toBe('minor');
+  });
+  it('switches exactly at the phase start', () => {
+    expect(statusAt(allenby, 2024.25)).toBe('minor');
+    expect(statusAt(allenby, 2024.5)).toBe('major');
+    expect(phaseAt(allenby, 2028.25).note).toBe('c');
+    expect(statusAt(allenby, 9999)).toBe('open');
+  });
+});
 
-describe('activeWorkAreas', () => {
-  it('returns areas only inside their date range', () => {
-    expect(activeWorkAreas(segment, at('2025-05'))).toHaveLength(0)
-    expect(activeWorkAreas(segment, at('2026'))).toHaveLength(1)
-    expect(activeWorkAreas(segment, dateSpecToTime('2028', 'end'))).toHaveLength(1)
-    expect(activeWorkAreas(segment, at('2029'))).toHaveLength(0)
-  })
-})
+describe('phaseRange', () => {
+  it('prints open-start, closed and open-ended ranges', () => {
+    expect(phaseRange(allenby.phases, 0)).toBe('עד 2024Q2');
+    expect(phaseRange(allenby.phases, 1)).toBe('2024Q3–2028Q1');
+    expect(phaseRange(allenby.phases, 2)).toBe('2028Q2 ואילך');
+  });
+});
 
-describe('timelineBounds', () => {
-  it('spans all dated items', () => {
-    const line = {
-      id: 'l',
-      name: 'L',
-      nameHe: 'ל',
-      mode: 'lrt' as const,
-      color: '#ff0000',
-      description: 'd',
-      sources: src,
-      segments: [segment],
-    }
-    expect(timelineBounds([line])).toEqual({
-      min: at('2020'),
-      max: dateSpecToTime('2030-Q2', 'start'),
-    })
-    expect(timelineBounds([])).toBeUndefined()
-  })
-})
+describe('sites', () => {
+  it('are active from their start until the line-wide heavy works', () => {
+    expect(isSiteActive(site, 2026.5)).toBe(false);
+    expect(isSiteActive(site, 2026.75)).toBe(true);
+    expect(isSiteActive(site, 2028.75)).toBe(true);
+    expect(isSiteActive(site, 2029)).toBe(false);
+  });
+});
+
+describe('worksAt', () => {
+  it('lists sections and active sites by works intensity', () => {
+    expect(worksAt([allenby], [site], 2027)).toEqual({ major: ['אלנבי'], minor: ['אתר הבימה'] });
+    expect(worksAt([allenby], [site], 2030)).toEqual({ major: [], minor: [] });
+  });
+});

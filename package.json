@@ -1,64 +1,51 @@
 {
   "name": "rails-plans-israel",
   "private": true,
-  "version": "0.0.0",
-  "description": "Interactive map and timeline of the planned light rail and metro lines in Gush Dan, with references to the original planning documents.",
+  "version": "0.2.0",
+  "description": "Planned light rail, metro and Israel Railways lines of Gush Dan on a map with a playable works timeline",
   "type": "module",
+  "license": "Apache-2.0",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
-    "lint": "eslint --max-warnings=0 .",
-    "lint:css": "stylelint \"src/**/*.css\"",
+    "lint": "eslint --max-warnings 0 .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "validate-data": "tsx scripts/validate-data.ts",
-    "extract-references": ".venv/bin/python -I scripts/extract_references.py",
-    "build-manifest": "tsx scripts/build-manifest.ts",
-    "build-data": ".venv/bin/python -m scripts.data_build.build_lines && prettier --write --log-level warn src/data/lines"
+    "test:watch": "vitest"
   },
   "dependencies": {
+    "firebase": "^13.4.0",
     "leaflet": "^1.9.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-leaflet": "^5.0.0",
-    "zod": "^4.6.7"
+    "react-leaflet": "^5.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.5",
+    "@eslint/js": "^10.0.1",
     "@testing-library/jest-dom": "^8.0.0",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.13",
-    "@types/leaflet": "^1.9.22",
-    "@types/node": "^26.6.6",
-    "@types/react": "^19.3.0",
+    "@types/leaflet": "^1.9.23",
+    "@types/node": "^26.6.11",
+    "@types/react": "^19.3.3",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.3.0",
-    "eslint": "^9.39.5",
-    "eslint-import-resolver-typescript": "^4.4.5",
-    "eslint-plugin-import-x": "^4.18.1",
-    "eslint-plugin-jsx-a11y": "^6.10.2",
-    "eslint-plugin-react-dom": "^5.30.5",
+    "eslint": "^10.15.0",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-x": "^5.30.5",
-    "eslint-plugin-unicorn": "^65.0.1",
+    "eslint-plugin-react-refresh": "^0.5.8",
     "globals": "^17.14.0",
     "jiti": "^2.7.0",
     "jsdom": "^29.1.1",
-    "markdownlint-cli2": "^0.24.1",
     "prettier": "^3.10.1",
-    "stylelint": "^17.16.0",
-    "stylelint-config-standard": "^40.0.0",
-    "tsx": "^4.23.15",
     "typescript": "~6.0",
-    "typescript-eslint": "^8.73.0",
-    "vite": "^8.3.8",
-    "vitest": "^5.1.1"
+    "typescript-eslint": "^8.74.0",
+    "vite": "^8.4.0",
+    "vitest": "^5.1.2"
   }
 }

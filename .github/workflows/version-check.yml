@@ -1,0 +1,24 @@
+name: Version check
+
+# PRs to master must bump package.json's version above the latest vX.Y.Z release tag.
+on:
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  version-check:
+    name: version-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Version is bumped above the latest release tag
+        run: node scripts/version.ts check

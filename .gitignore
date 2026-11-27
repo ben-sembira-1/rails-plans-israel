@@ -1,13 +1,9 @@
 node_modules
 dist
-dist-ssr
 coverage
-*.local
-*.log
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.firebase
 .DS_Store
-.idea
-.vscode/*
-!.vscode/extensions.json
-# scratch area for downloads before they are filed under references/raw
-.incoming/
-.venv/

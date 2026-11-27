@@ -1,62 +1,58 @@
-import type { Line, Phase, Segment, WorkArea } from '../data/schema.ts'
+import type { Phase, Section, Site, WorksStatus } from '../data/schema.ts';
+import { formatTime, stepBefore } from './time.ts';
 
-import { dateSpecToTime } from './dates.ts'
+/** Metro preparatory sites are shown until the line-wide heavy works start and absorb them. */
+export const METRO_HEAVY_WORKS_FROM = 2029;
 
-export type SegmentStatus = 'planned' | 'construction' | 'operational'
+export const STATUS_LABEL: Readonly<Record<WorksStatus, string>> = {
+  open: 'פועל',
+  major: 'עבודות כבדות',
+  minor: 'עבודות קלות',
+  none: 'בתכנון, ללא עבודות',
+};
 
-function phaseStarted(phase: Phase, time: number): boolean {
-  return dateSpecToTime(phase.start, 'start') <= time
+/** The phase a section is in at time `t`. Before its first dated phase, the first phase applies. */
+export function phaseAt(section: Section, t: number): Phase {
+  const [first, ...rest] = section.phases;
+  if (first === undefined) throw new Error(`section ${section.id} has no phases`);
+  let current = first;
+  for (const p of rest) if (p.since !== null && p.since <= t) current = p;
+  return current;
 }
 
-/**
- * Status of a segment at a moment in time:
- * - `operational` once any operational phase has started;
- * - `construction` once any construction phase has started (and it is not yet operational);
- * - otherwise `planned` (shown in the "disabled" style on the map).
- */
-export function segmentStatusAt(segment: Segment, time: number): SegmentStatus {
-  if (segment.phases.some((p) => p.kind === 'operational' && phaseStarted(p, time))) {
-    return 'operational'
-  }
-  if (segment.phases.some((p) => p.kind === 'construction' && phaseStarted(p, time))) {
-    return 'construction'
-  }
-  return 'planned'
+export function statusAt(section: Section, t: number): WorksStatus {
+  return phaseAt(section, t).status;
 }
 
-/** Work areas that are closed for construction at the given time. */
-export function activeWorkAreas(segment: Segment, time: number): WorkArea[] {
-  return segment.workAreas.filter((area) => {
-    const start = dateSpecToTime(area.start, 'start')
-    const end = area.end === undefined ? Number.POSITIVE_INFINITY : dateSpecToTime(area.end, 'end')
-    return start <= time && time <= end
-  })
+export function isSiteActive(site: Site, t: number): boolean {
+  return t >= site.since && t < METRO_HEAVY_WORKS_FROM;
 }
 
-/** Earliest and latest dates mentioned anywhere in the data, used as the timeline range. */
-export function timelineBounds(lines: readonly Line[]): { min: number; max: number } | undefined {
-  const times: number[] = []
-  for (const line of lines) {
-    for (const segment of line.segments) {
-      for (const phase of segment.phases) {
-        times.push(dateSpecToTime(phase.start, 'start'))
-        if (phase.end !== undefined) {
-          times.push(dateSpecToTime(phase.end, 'end'))
-        }
-      }
-      for (const milestone of segment.milestones) {
-        times.push(dateSpecToTime(milestone.date, 'start'))
-      }
-      for (const area of segment.workAreas) {
-        times.push(dateSpecToTime(area.start, 'start'))
-        if (area.end !== undefined) {
-          times.push(dateSpecToTime(area.end, 'end'))
-        }
-      }
-    }
-  }
-  if (times.length === 0) {
-    return undefined
-  }
-  return { min: Math.min(...times), max: Math.max(...times) }
+/** Human-readable date range of phase `i`, e.g. `2024Q3–2028Q1`, `עד 2028Q1`, `2028Q2 ואילך`. */
+export function phaseRange(phases: readonly Phase[], i: number): string {
+  const p = phases[i];
+  if (p === undefined) return '';
+  const next = phases[i + 1];
+  const nextSince = next?.since ?? null;
+  const end = nextSince === null ? null : formatTime(stepBefore(nextSince));
+  if (p.since === null) return end === null ? 'כעת' : `עד ${end}`;
+  const start = formatTime(p.since);
+  if (end === null) return `${start} ואילך`;
+  return start === end ? start : `${start}–${end}`;
+}
+
+export interface WorksSummary {
+  readonly major: readonly string[];
+  readonly minor: readonly string[];
+}
+
+/** Names of the sections (and active sites) under heavy and light works at `t`. */
+export function worksAt(sections: readonly Section[], sites: readonly Site[], t: number): WorksSummary {
+  return {
+    major: sections.filter((s) => statusAt(s, t) === 'major').map((s) => s.name),
+    minor: [
+      ...sections.filter((s) => statusAt(s, t) === 'minor').map((s) => s.name),
+      ...sites.filter((s) => isSiteActive(s, t)).map((s) => `אתר ${s.name}`),
+    ],
+  };
 }

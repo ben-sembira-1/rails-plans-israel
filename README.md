@@ -1,66 +1,56 @@
-# rails-plans-israel
+# Rails plans – Gush Dan
 
-An interactive map of all the planned light rail and metro lines in the Tel Aviv district (גוש דן), with a
-timeline you can play through. It shows which parts are operational, which are under construction (including
-closed work areas) and which are still only planned. Click a segment to see its full timeline, the raw
-materials, and the page images from the original planning documents. Every item cites its source.
+The light-rail (Red, Purple, Green), metro (M1, M2, M3) and Israel Railways lines of the Tel Aviv metropolitan area
+on a street map, with a playable timeline of openings and construction works.
 
-**Live site:** <https://ben-sembira-1.github.io/rails-plans-israel/>
+**Site:** <https://ben-sembira-1.github.io/rails-plans-israel/> (Google sign-in; access is approved by the admin).
 
-The header shows the site version (`vX.Y.Z`) and "Data from" – the date of the newest
-`reference-update-YYYY/MM/DD` tag, i.e. when the source documents were downloaded.
+See [docs/TARGET.md](docs/TARGET.md) for what the site shows and why.
 
-## What is on the map
+## Features
 
-| Line           | Plans (תת"ל)       | Timeline source                                 | Geometry                    |
-| -------------- | ------------------ | ----------------------------------------------- | --------------------------- |
-| Green          | 71/א, 71/ב, 71/ג   | NTA schedule (Q3 2026) + plan approvals         | OpenStreetMap route         |
-| Purple         | 70/א/1, 70/ב, 70/ג | NTA schedule (Q3 2026) + plan approvals         | OpenStreetMap route         |
-| Metro M1/M2/M3 | 101, 102, 103      | NTA metro schedule (July 2026) + plan approvals | traced from plan boundaries |
-| Brown          | 72/א, 72/ב         | plan approvals only (no schedule published)     | traced from plan boundaries |
-
-Traced geometry is an approximation of the corridor centreline, not the exact alignment.
+- Each line is split into sections; at the selected time a section is drawn as **in service** (solid),
+  **under works** (dashed, inside a work zone) or **planned** (dotted).
+- **Work zones** to real scale: a dark band up to 20 m from the line and a light band to 100 m; orange for heavy
+  works, yellow for light works. Metro preparatory sites are circular zones until the line-wide works start (2029).
+- **Timeline**: quarterly until 2029Q4, yearly from 2030, then "no announced date" (the full network). A milestones
+  row (main openings), a works-status events row, highlighting of the current event, and a play button.
+- **Accounts**: Google sign-in; new users wait for the admin's approval; each user's last timeline position is
+  saved and restored.
 
 ## Development
 
 ```sh
 npm ci
-npm run dev            # http://localhost:5173/rails-plans-israel/
-npm test               # unit tests (vitest)
-npm run typecheck
-npm run lint
-npm run validate-data  # schema + source references
+pre-commit install          # once
+npm run dev                 # http://localhost:5173/rails-plans-israel/ (no sign-in without .env.local)
+npm test
+pre-commit run --all-files  # prettier, eslint, tsc, file hygiene
+npm run build
 ```
 
-Pre-commit hooks (lint, format, types, data validation, secrets, LFS checks):
+To develop with sign-in, copy `.env.example` to `.env.local` and fill in the Firebase web-app config
+(see [docs/FIREBASE.md](docs/FIREBASE.md)).
 
-```sh
-pip install pre-commit   # or: brew install pre-commit
-pre-commit install
-pre-commit run --all-files
-```
+| Path                    | What                                                            |
+| ----------------------- | --------------------------------------------------------------- |
+| `src/data/network.json` | Sections (geometry + works phases), sites, stations, rail layer |
+| `src/data/schema.ts`    | Types and the runtime validator for `network.json`              |
+| `src/domain/`           | Pure logic: time steps and formatting, status at a time, events |
+| `src/components/`       | Map, timeline panel, legend                                     |
+| `src/auth/`             | Firebase sign-in, approval flow, admin panel, saved position    |
+| `firestore.rules`       | Server-side access rules                                        |
+| `scripts/version.ts`    | Version-bump check used by CI                                   |
 
-Python tooling for extracting text/images from the reference PDFs:
+## Releases
 
-```sh
-python3 -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt
-npm run extract-references
-```
+Every PR to `master` must bump `version` in `package.json` above the latest `vX.Y.Z` tag
+(`npm version patch|minor|major --no-git-tag-version`); the `version-check` job fails otherwise. On merge, the
+release workflow tags the commit `vX.Y.Z` and deploys to GitHub Pages. The version is shown next to the title.
 
-## Data
+## Data sources
 
-- `references/raw/` – archived copies of the original documents (Git LFS), grouped by collection
-  (`references/collections.json`).
-- `references/manifest.json` – one entry per document: id, original URL, sha256, retrieval date.
-- `src/data/lines/*.json` – lines → segments → phases, milestones, work areas, stations, materials. Every item
-  has `sources: [{ docId, page?, quote? }]`.
-
-To refresh the data see [docs/UPDATING_DATA.md](docs/UPDATING_DATA.md).
-
-## Releases and deployment
-
-- Every PR must carry exactly one label: `version:patch`, `version:minor` or `version:major` (enforced by the
-  `version-label` check).
-- On merge to `master`, the `release-deploy` workflow tags `vX.Y.Z` and deploys to GitHub Pages.
-- The header shows the version and the date of the latest `reference-update-YYYY/MM/DD` tag (when the data
-  was taken).
+Planning Administration GIS layers (TAMA 70 and "Hatzav"), NTA (נת״ע) publications and line maps, Hebrew
+Wikipedia station tables, OpenStreetMap (Israel Railways, loaded live), and news reports for the works schedule
+(as of November 2026). Metro lines are straight lines between stations, not tunnel alignments. Positions marked
+"מיקום משוער" are estimates.

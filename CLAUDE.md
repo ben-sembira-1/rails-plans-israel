@@ -2,28 +2,11 @@
 
 Guidance for AI agents working in this repository.
 
-## Project
-
-Vite + React + TypeScript (strictest settings) site, deployed to GitHub Pages, showing the planned light rail and
-metro lines of Gush Dan on a map with a playable timeline. Every item on the site cites an archived source
-document.
-
-- Data: `src/data/lines/<lineId>.json` (schema: `src/data/schema.ts`), sources: `references/manifest.json`.
-- Archived originals: `references/raw/**` (Git LFS). Extracted page text: `references/text/**`.
-  Page images served by the site: `public/references/**`.
-- Status logic (planned / construction / operational): `src/domain/status.ts`.
-
-## Updating the data
-
-When asked to update the data, follow [docs/UPDATING_DATA.md](docs/UPDATING_DATA.md) exactly. In short: start
-from <https://www.nta.co.il/>, download new documents **into this repo** (`references/raw/`, LFS), rebuild the
-manifest, update `src/data/lines/*.json` with a source on every item, open a PR with a `version:*` label, and
-after merge create and push the tag `reference-update-YYYY/MM/DD` on `master`.
-
-## Rules
-
-- Never add a fact, date, geometry or image without a `sources` entry pointing to a manifest document.
+- Target and requirements: [docs/TARGET.md](docs/TARGET.md). Sign-in setup: [docs/FIREBASE.md](docs/FIREBASE.md).
+- Stack: Vite + React + TypeScript (strictest settings), Leaflet via react-leaflet, Firebase Auth + Firestore.
+- Data: `src/data/network.json`, validated by `src/data/schema.ts` (tests fail on invalid data). Time values are
+  decimal years (2026.75 = 2026Q4); `9999` means "no announced date".
 - Keep TypeScript and ESLint strict; do not disable rules to make code pass.
-- Run `pre-commit run --all-files`, `npm test`, `npm run validate-data` and `npm run build` before committing.
-- Changes reach `master` only via PRs that carry exactly one of `version:patch`, `version:minor`,
-  `version:major`. The release workflow tags `vX.Y.Z` and deploys.
+- Before committing: `pre-commit run --all-files`, `npm test`, `npm run build`.
+- Changes reach `master` only via PRs, and every PR must bump `version` in `package.json` above the latest
+  `vX.Y.Z` tag. Merging tags the release and deploys GitHub Pages. Never force-push.

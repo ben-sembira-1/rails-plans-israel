@@ -1,9 +1,9 @@
-name: ci
+name: CI
 
 on:
   pull_request:
   push:
-    branches: [master]
+    branches-ignore: [master]
 
 permissions:
   contents: read
@@ -17,25 +17,20 @@ jobs:
     name: ci
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-          lfs: false
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
       - run: npm ci
-      - name: pre-commit (all hooks, all files)
-        uses: pre-commit/action@v3.0.1
-        env:
-          SKIP: no-commit-to-branch
+      - uses: actions/setup-python@v7
         with:
-          extra_args: --all-files
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm run validate-data
-      - run: npm run build
+          python-version: '3.13'
+      - name: pre-commit
+        uses: pre-commit/action@v3.0.1
+        with:
+          extra_args: --all-files --show-diff-on-failure
+      - name: Unit tests
+        run: npm test
+      - name: Build
+        run: npm run build
