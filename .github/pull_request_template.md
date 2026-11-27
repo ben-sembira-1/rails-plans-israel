@@ -1,4 +1,6 @@
-<!-- Open as a draft. Mark ready only after the regression below is captured and evaluated (docs/REGRESSION.md). -->
+<!-- Open as a draft and add one release:patch|minor|major label (the version is set from it). Add the
+     agent:finish label to have CI capture and evaluate the regression and finish this description
+     (docs/CI-AGENT.md). -->
 
 # vX.Y.Z
 

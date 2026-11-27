@@ -13,8 +13,10 @@ Guidance for AI agents working in this repository.
 - Never commit keys or other secrets (`.env.local` is git-ignored). gitleaks blocks them in pre-commit and CI; do
   not bypass it (`--no-verify`, allowlists) to get a commit through.
 - Before committing: `pre-commit run --all-files`, `npm test`, `npm run build`.
-- Changes reach `master` only via PRs, and every PR must bump `version` in `package.json` above the latest
-  `vX.Y.Z` tag. Merging tags the release and deploys GitHub Pages. Never force-push.
+- Changes reach `master` only via PRs. A PR's version comes from its label (`release:patch|minor|major`, exactly
+  one): `version-check` computes it from `master` and the latest tag and commits it to the branch; don't bump
+  `package.json` by hand. Merging tags the release and deploys GitHub Pages. Never force-push. See
+  [docs/CI-AGENT.md](docs/CI-AGENT.md).
 - Map shapes (`Polyline`, `Circle`, …) are updated with Google's merging `setOptions`, so always pass every option
   that can change (e.g. `icons: []` for a solid line), or the old value stays. When an option is only read on
   creation, change the React `key` to recreate the shape.
@@ -22,7 +24,10 @@ Guidance for AI agents working in this repository.
   go on the PR as **review comment threads** on the relevant diff lines (`gh api .../pulls/<n>/reviews` with
   `comments`), one task per thread, with the exact steps. `master` requires conversation resolution, so the PR
   can't merge until each one is resolved. Don't repeat them in the PR description.
-- **PRs open as drafts.** Before marking one ready, run the regression (`npm run regression`, see
+- **PRs open as drafts.** The owner finishes one by adding the `agent:finish` label: CI runs the regression and
+  Claude does the evaluation and description below and sets the required `agent-verdict` status
+  ([docs/CI-AGENT.md](docs/CI-AGENT.md)). Working locally, do the same by hand: before marking a PR ready, run the
+  regression (`npm run regression`, see
   [docs/REGRESSION.md](docs/REGRESSION.md)): every scenario in `regression/scenarios.ts`, in a desktop and a phone
   layout, compared with `master`.
   Evaluate every comparison sheet yourself. The PR description is, in order: the new version as its top header (`# vX.Y.Z`); text; big screenshots of the
@@ -30,8 +35,8 @@ Guidance for AI agents working in this repository.
   difference from `master` (and its commit), each with why it is OK and expected**, then a statement that you
   evaluated the images against `master`, then the small images (linking to full size). Keep
   `regression/scenarios.ts` up to date when UI states are added or change.
-  `gh` can't upload images, so commit them to the `pr-assets` branch under `pr-<number>/` (a separate orphan
-  branch, e.g. via `git worktree`; never force-push it). Images there are stored in Git LFS (its
+  `gh` can't upload images, so commit them to the `pr-assets` branch under `pr-<number>/` with
+  `scripts/upload-pr-assets.sh <number>` (a separate orphan branch; never force-push it). Images there are stored in Git LFS (its
   `.gitattributes`), so embed them with
   `https://media.githubusercontent.com/media/ben-sembira-1/rails-plans-israel/pr-assets/pr-<number>/<file>`;
   `raw.githubusercontent.com` serves the LFS pointer, not the image.
