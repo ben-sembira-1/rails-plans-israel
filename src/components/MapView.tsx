@@ -11,6 +11,7 @@ import {
   Popup,
   TileLayer,
   Tooltip,
+  useMap,
   useMapEvents,
 } from 'react-leaflet';
 import type { LatLng, Network, Section, Site, Station, WorksStatus } from '../data/schema.ts';
@@ -371,6 +372,21 @@ function LabelToggle({ show }: { show: boolean }) {
   return null;
 }
 
+/** Keeps Leaflet's size in sync when the layout around the map changes (e.g. the timeline dock opens). */
+function AutoResize() {
+  const map = useMap();
+  useEffect(() => {
+    const observer = new ResizeObserver(() => {
+      map.invalidateSize();
+    });
+    observer.observe(map.getContainer());
+    return () => {
+      observer.disconnect();
+    };
+  }, [map]);
+  return null;
+}
+
 export interface MapViewProps {
   readonly network: Network;
   readonly time: number;
@@ -417,6 +433,7 @@ export function MapView(props: MapViewProps) {
       <Pane name="future" style={{ zIndex: 420 }} />
       <Pane name="lines" style={{ zIndex: 430 }} />
       <Pane name="stations" style={{ zIndex: 640 }} />
+      <AutoResize />
       <Layers {...props} />
     </MapContainer>
   );

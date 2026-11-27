@@ -1,7 +1,7 @@
 {
   "name": "rails-plans-israel",
   "private": true,
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Planned light rail, metro and Israel Railways lines of Gush Dan on a map with a playable works timeline",
   "type": "module",
   "license": "Apache-2.0",
