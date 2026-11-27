@@ -46,19 +46,23 @@ point in time:
 - A **top strip** with the logo, the app name, the version and the time currently shown on the timeline. Admins
   also get an **admin center** button (with a pending-requests count) that opens the access-management page; every
   signed-in user gets an account menu (sign out).
-- The map fills the space between the top strip and the **timeline dock** at the bottom.
+- The **timeline** is always right under the top strip, on every screen size.
+- **Desktop**: a **side panel on the left** holds all the controls and the documentation: the status at the
+  current time (milestone text, sections under heavy and light works), the milestones and works-status events
+  (buttons), the layer toggles and "how to read the map" (line styles, works zones, sources). The map fills the
+  rest.
+- **Narrow screens / phone**: the side panel is hidden; a "legend and events" toggle under the timeline opens it
+  over the map.
 
 ### Timeline
 
 - A bar over time. It moves by **quarter** until 2029Q4 and by **full year** from 2030 (later dates are too
   uncertain for quarters), followed by a final "no announced date" step where the full network is shown as a
   plain map.
-- **Previous / next** buttons jump to the previous or next event on the bar.
-- **Desktop**: every event is a marker on the bar; the main milestones (2023Q3, 2028Q2, 2028Q4, 2030, 2034–37,
-  no date) are bigger and labelled. The current marker is highlighted. Under the bar: the current caption and the
-  sections under heavy and light works.
-- **Phone**: by default only the bar, previous/next and the caption. An "events and details" toggle opens the
-  milestones, the list of works-status events (buttons) and the works summary.
+- **Previous / next** buttons, side by side next to the current time, jump to the previous or next event.
+- Every event is a marker on the bar; the main milestones (2023Q3, 2028Q2, 2028Q4, 2030, 2034–37, no date) are
+  bigger and labelled, and the current marker is highlighted. Under the bar: the current caption. On a phone the
+  markers are small, unlabelled and not tappable (the slider and the panel's event list do that job).
 - Dates are formatted `YYYYQn` before 2030 and `YYYY` from 2030.
 
 ### Engineering
