@@ -7,3 +7,6 @@ coverage
 !.env.example
 .firebase
 .DS_Store
+
+# Regression screenshots (npm run regression)
+regression-output
