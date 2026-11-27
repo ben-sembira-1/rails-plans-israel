@@ -4,6 +4,7 @@ import { AuthGate, Screen } from './auth/AuthGate.tsx';
 import { firebaseConfig, googleClientId, initFirebase } from './auth/firebase.ts';
 import { NETWORK } from './data/network.ts';
 import { mapsConfig } from './map/config.ts';
+import { seedPlaces } from './places/devSeed.ts';
 import { createMemoryStore } from './places/memoryStore.ts';
 
 export function Root() {
@@ -14,7 +15,10 @@ export function Root() {
 
   const maps = useMemo(() => mapsConfig(), []);
   // Local development without Firebase keeps places in memory only.
-  const devPlaces = useMemo(() => createMemoryStore(), []);
+  const devPlaces = useMemo(
+    () => createMemoryStore(import.meta.env.DEV ? seedPlaces(window.location.search) : []),
+    [],
+  );
 
   if (fb !== null) return <AuthGate fb={fb} network={NETWORK} maps={maps} clientId={googleClientId()} />;
   // Local development without Firebase: open map, no sign-in.

@@ -18,6 +18,50 @@ export const LAYOUTS: readonly Layout[] = [
   { id: 'phone', title: 'Phone', width: 390, height: 844 },
 ];
 
+interface SeedPlace {
+  readonly googlePlaceId: string;
+  readonly name: string;
+  readonly address: string;
+  readonly lat: number;
+  readonly lng: number;
+}
+
+let sample: Promise<SeedPlace> | null = null;
+
+/** Dizengoff Center from one Google text search, shared by every scenario of the run. */
+function samplePlace(page: Page): Promise<SeedPlace> {
+  sample ??= page.evaluate(async () => {
+    interface GooglePlace {
+      id: string;
+      displayName?: string | null;
+      formattedAddress?: string | null;
+      location?: { lat: () => number; lng: () => number } | null;
+    }
+    interface PlacesLib {
+      Place: { searchByText: (r: object) => Promise<{ places: GooglePlace[] }> };
+    }
+    const g = (window as unknown as { google: { maps: { importLibrary: (n: string) => Promise<unknown> } } })
+      .google;
+    const { Place } = (await g.maps.importLibrary('places')) as PlacesLib;
+    const { places } = await Place.searchByText({
+      textQuery: 'דיזנגוף סנטר, תל אביב',
+      fields: ['id', 'displayName', 'formattedAddress', 'location'],
+      language: 'he',
+      maxResultCount: 1,
+    });
+    const p = places[0];
+    if (!p?.location) throw new Error('Dizengoff Center not found');
+    return {
+      googlePlaceId: p.id,
+      name: p.displayName ?? 'דיזנגוף סנטר',
+      address: p.formattedAddress ?? '',
+      lat: p.location.lat(),
+      lng: p.location.lng(),
+    };
+  });
+  return sample;
+}
+
 /** A step that the version under test doesn't support (e.g. a feature added later). */
 export class NotApplicable extends Error {}
 
@@ -79,28 +123,74 @@ export class Ui {
     if ((await tab.getAttribute('aria-selected')) !== 'true') await tab.click();
   }
 
-  /** Searches a fixed place and saves it, leaving its card open. */
+  /**
+   * Starts the app with one saved place (Dizengoff Center) and opens its card from the places list.
+   *
+   * Google's search box sends an Autocomplete request on every keystroke, which spent the key's daily quota, so the
+   * place comes from one text search per run and is seeded through the dev-only `?seed-place=` parameter.
+   */
   async addSamplePlace(): Promise<void> {
-    const search = this.page.locator('gmp-place-autocomplete');
-    if ((await search.count()) === 0) throw new NotApplicable('this version has no place search');
-    const save = this.page.getByRole('button', { name: 'שמירה כמקום מעניין' });
-    // Google's suggestions can be slow (several tabs search at once), so pick the first one and retry if needed.
-    for (let attempt = 1; ; attempt++) {
-      await search.click();
-      await this.page.keyboard.press('ControlOrMeta+A');
-      await this.page.keyboard.type('דיזנגוף סנטר', { delay: 40 });
-      await this.page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => undefined);
-      await this.page.keyboard.press('ArrowDown');
-      await this.page.keyboard.press('Enter');
-      try {
-        await save.waitFor({ timeout: 8000 });
-        break;
-      } catch (e) {
-        if (attempt === 3) throw e;
-      }
+    if ((await this.page.locator('gmp-place-autocomplete').count()) === 0) {
+      throw new NotApplicable('this version has no places');
     }
-    await save.click();
-    await this.page.getByRole('textbox', { name: 'הערה חדשה' }).waitFor({ timeout: 10000 });
+    const seed = await samplePlace(this.page);
+    const url = new URL(this.page.url());
+    url.search = `?seed-place=${encodeURIComponent(JSON.stringify(seed))}`;
+    await this.page.goto(url.toString(), { waitUntil: 'load' });
+    await this.page.waitForSelector('#root > *', { timeout: 30000 });
+    await this.openTab('places');
+    await this.page
+      .getByRole('region', { name: 'מקומות מעניינים' })
+      .getByRole('button', { name: new RegExp(seed.name) })
+      .click();
+    await this.page.getByRole('textbox', { name: 'הערה חדשה' }).waitFor({ timeout: 15000 });
+  }
+
+  /**
+   * Centers the map on a point at a zoom level, in any version: it finds the map object (Leaflet or Google) in the
+   * running React tree, so old releases need no test hooks.
+   */
+  async focusMap(lat: number, lng: number, zoom: number): Promise<void> {
+    const found = await this.page.evaluate(
+      ([la, ln, z]) => {
+        interface Fiber {
+          child: Fiber | null;
+          sibling: Fiber | null;
+          memoizedProps?: { value?: { map?: unknown } } | null;
+        }
+        interface AnyMap {
+          setView?: (c: [number, number], z: number, o: object) => void;
+          setCenter?: (c: object) => void;
+          setZoom?: (z: number) => void;
+        }
+        const root = document.getElementById('root');
+        if (!root) return false;
+        const key = Object.keys(root).find((k) => k.startsWith('__reactContainer$'));
+        if (!key) return false;
+        const start = (root as unknown as Record<string, Fiber | undefined>)[key];
+        if (!start) return false;
+        const stack: Fiber[] = [start];
+        while (stack.length > 0) {
+          const f = stack.pop();
+          if (!f) continue;
+          const map = f.memoizedProps?.value?.map as AnyMap | undefined;
+          if (map?.setView) {
+            map.setView([la, ln], z, { animate: false });
+            return true;
+          }
+          if (map?.setCenter && map.setZoom) {
+            map.setCenter({ lat: la, lng: ln });
+            map.setZoom(z);
+            return true;
+          }
+          if (f.sibling) stack.push(f.sibling);
+          if (f.child) stack.push(f.child);
+        }
+        return false;
+      },
+      [lat, lng, zoom] as const,
+    );
+    if (!found) throw new NotApplicable('could not find the map in this version');
   }
 
   /** Opens Google's details panel from the open place card. */
@@ -123,6 +213,12 @@ export const SCENARIOS: readonly Scenario[] = [
     id: 'all-closed',
     title: 'Everything closed',
     run: (ui) => ui.closePanel(),
+  },
+  {
+    // Zone widths at real scale: 20 m (dark, heavy) and 100 m (light) on each side of the line.
+    id: 'works-closeup',
+    title: 'Close-up: Purple Line heavy works on Allenby (zoom 16)',
+    run: (ui) => ui.focusMap(32.0665, 34.7725, 16),
   },
   {
     id: 'trains-tab',

@@ -1,7 +1,15 @@
-import { AdvancedMarker, Circle, useApiIsLoaded, InfoWindow, Map, Polyline } from '@vis.gl/react-google-maps';
-import { Fragment, useEffect, useState } from 'react';
+import {
+  AdvancedMarker,
+  Circle,
+  InfoWindow,
+  Map,
+  Polygon,
+  Polyline,
+  useApiIsLoaded,
+} from '@vis.gl/react-google-maps';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import type { LatLng, Network, Section, Site, Station, WorksStatus } from '../data/schema.ts';
-import { bandWidthPx } from '../domain/geo.ts';
+import { bufferRings } from '../domain/geo.ts';
 import { LINES, type LayerId } from '../domain/lines.ts';
 import { loadLiveRail } from '../domain/rail.ts';
 import {
@@ -14,7 +22,6 @@ import {
 import { formatTime, stepBefore } from '../domain/time.ts';
 import { sectionLineStyle, sectionZ, Z } from './sectionStyle.ts';
 
-const CENTER_LAT = 32.07;
 const LABEL_ZOOM = 15;
 const INNER_M = 20;
 const OUTER_M = 100;
@@ -65,22 +72,42 @@ function SectionPopup({ section }: { section: Section }) {
   );
 }
 
-function SectionLayer({
-  section,
-  time,
-  zoom,
-  onPopup,
-}: {
-  section: Section;
-  time: number;
-  zoom: number;
-  onPopup: OpenPopup;
-}) {
+/**
+ * A works zone at real scale: a dark band within 20 m of the line and a light band to 100 m, as filled areas.
+ * (Thick polylines can't be used: Google Maps caps line width at a few dozen pixels, far narrower than 200 m at
+ * street zoom.)
+ */
+function ZoneBands({ path, colors }: { path: readonly LatLng[]; colors: readonly [string, string] }) {
+  const outer = useMemo(() => bufferRings(path, OUTER_M).map((ring) => ring.map(toLatLng)), [path]);
+  const inner = useMemo(() => bufferRings(path, INNER_M).map((ring) => ring.map(toLatLng)), [path]);
+  return (
+    <>
+      <Polygon
+        paths={outer}
+        fillColor={colors[1]}
+        fillOpacity={0.5}
+        strokeWeight={0}
+        strokeOpacity={0}
+        zIndex={Z.zoneOuter}
+        clickable={false}
+      />
+      <Polygon
+        paths={inner}
+        fillColor={colors[0]}
+        fillOpacity={0.6}
+        strokeWeight={0}
+        strokeOpacity={0}
+        zIndex={Z.zoneInner}
+        clickable={false}
+      />
+    </>
+  );
+}
+
+function SectionLayer({ section, time, onPopup }: { section: Section; time: number; onPopup: OpenPopup }) {
   const status = statusAt(section, time);
   const zone = ZONE_COLORS[status];
   const w = lineWeight(section);
-  const outer = bandWidthPx(OUTER_M, zoom, CENTER_LAT, 5);
-  const inner = bandWidthPx(INNER_M, zoom, CENTER_LAT, 2);
   const line = sectionLineStyle(status, w, LINES[section.line].color);
   const z = sectionZ(status);
   const casingOpacity = status === 'none' ? 0 : status === 'open' ? 1 : 0.9;
@@ -95,26 +122,7 @@ function SectionLayer({
         return (
           // Paths never reorder, so the index is a stable key.
           <Fragment key={i}>
-            {zone !== undefined && (
-              <>
-                <Polyline
-                  path={path}
-                  strokeColor={zone[1]}
-                  strokeOpacity={0.5}
-                  strokeWeight={outer}
-                  zIndex={Z.zoneOuter}
-                  clickable={false}
-                />
-                <Polyline
-                  path={path}
-                  strokeColor={zone[0]}
-                  strokeOpacity={0.6}
-                  strokeWeight={inner}
-                  zIndex={Z.zoneInner}
-                  clickable={false}
-                />
-              </>
-            )}
+            {zone !== undefined && <ZoneBands path={p} colors={zone} />}
             <Polyline
               path={path}
               strokeColor="#fff"
@@ -386,7 +394,7 @@ export function MapView({ network, time, hidden, mapId, onPoiClick, children }: 
         {network.sections
           .filter((s) => visible(s.line))
           .map((s) => (
-            <SectionLayer key={s.id} section={s} time={time} zoom={zoom} onPopup={setPopup} />
+            <SectionLayer key={s.id} section={s} time={time} onPopup={setPopup} />
           ))}
         {network.sites
           .filter((s) => visible(s.line))

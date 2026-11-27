@@ -191,6 +191,13 @@ async function shoot(browser: Browser, v: Version, layout: Layout, scenario: Sce
     return { scenario: scenario.id, layout: layout.id, status: 'ok', note: '' };
   } catch (e) {
     if (existsSync(file)) rmSync(file);
+    // Keep what the page showed when a step failed, for debugging (not used in the PR).
+    if (!(e instanceof NotApplicable)) {
+      await context
+        .pages()[0]
+        ?.screenshot({ path: file.replace(/\.png$/, '.error.png') })
+        .catch(() => undefined);
+    }
     return {
       scenario: scenario.id,
       layout: layout.id,
@@ -315,7 +322,11 @@ async function main(): Promise<void> {
     const file = join(OUT, v.label, 'manifest.json');
     if (!v.baseline || !existsSync(file)) continue;
     const m = JSON.parse(readFileSync(file, 'utf8')) as Manifest;
-    if (m.commit === v.baseline.commit) cached.set(v.label, m);
+    // Reuse only if it is the same commit and every current scenario was captured.
+    const complete = LAYOUTS.every((l) =>
+      SCENARIOS.every((sc) => m.results.some((r) => r.scenario === sc.id && r.layout === l.id)),
+    );
+    if (m.commit === v.baseline.commit && complete) cached.set(v.label, m);
   }
   const todo = versions.filter((v) => !cached.has(v.label));
   log(`versions: ${versions.map((v) => `${v.label}${cached.has(v.label) ? ' (cached)' : ''}`).join(', ')}`);
