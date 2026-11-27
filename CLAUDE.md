@@ -20,7 +20,7 @@ Guidance for AI agents working in this repository.
 - **Tasks for the owner** (console settings, secrets/variables, publishing rules, anything you can't do yourself)
   go on the PR as **review comment threads** on the relevant diff lines (`gh api .../pulls/<n>/reviews` with
   `comments`), one task per thread, with the exact steps. `master` requires conversation resolution, so the PR
-  can't merge until each one is resolved. Also list them in the description's "Before merging" section.
+  can't merge until each one is resolved. Don't repeat them in the PR description.
 - **PRs open as drafts.** Before marking one ready, run the regression (`npm run regression`, see
   [docs/REGRESSION.md](docs/REGRESSION.md)): every scenario in `regression/scenarios.ts`, in a desktop and a phone
   layout, compared with `master`.
