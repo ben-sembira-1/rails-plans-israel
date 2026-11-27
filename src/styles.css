@@ -479,3 +479,8 @@ input:focus-visible {
     display: none;
   }
 }
+
+.muted {
+  color: var(--muted);
+  font-size: 12px;
+}
