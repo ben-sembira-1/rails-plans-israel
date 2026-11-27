@@ -163,6 +163,9 @@ export class Ui {
           setCenter?: (c: object) => void;
           setZoom?: (z: number) => void;
         }
+        interface MapsEvent {
+          addListenerOnce: (o: unknown, e: string, f: () => void) => void;
+        }
         const root = document.getElementById('root');
         if (!root) return false;
         const key = Object.keys(root).find((k) => k.startsWith('__reactContainer$'));
@@ -179,9 +182,20 @@ export class Ui {
             return true;
           }
           if (map?.setCenter && map.setZoom) {
+            // Resolve once the map has finished moving, so the screenshot isn't taken mid-animation (layers
+            // that update when the map goes idle would still show the previous zoom).
+            const event = (window as unknown as { google: { maps: { event: MapsEvent } } }).google.maps.event;
+            const idle = new Promise<boolean>((ok) => {
+              event.addListenerOnce(map, 'idle', () => {
+                ok(true);
+              });
+              setTimeout(() => {
+                ok(true);
+              }, 5000);
+            });
             map.setCenter({ lat: la, lng: ln });
             map.setZoom(z);
-            return true;
+            return idle;
           }
           if (f.sibling) stack.push(f.sibling);
           if (f.child) stack.push(f.child);
