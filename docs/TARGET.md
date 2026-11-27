@@ -49,7 +49,9 @@ point in time:
 - Building sites under works get a real-scale **noise zone** around the site's outline: a dark **high-noise** band
   up to **20 m** and a light **low-noise** band from **20 m to 50 m**, in brown (apart from the rail zones).
   Permits waiting to start are brown outlines, requests in process gray outlines (hidden by default), and road
-  works dashed teal lines. Below zoom 15 every project is a dot.
+  works dashed teal lines. Below zoom 15 (or with more than 600 projects in view) projects close together are
+  **counted per area**: a bubble with their number and a ring showing the share of each layer; clicking it zooms
+  in until the projects unpack into shapes. A project alone in its area is a dot that opens its popup.
 - Clicking a project shows what is built, its phases with dates (an estimated end is marked), its stage, housing
   units, TAMA 38, night works, a link to the city's file, the source and the update date.
 - The panel shows the counts at the selected time and has a toggle per layer. At the "no date" step only the

@@ -1440,3 +1440,59 @@ input:focus-visible {
 .project-pop {
   max-width: 340px;
 }
+
+/* Zoomed out: single projects are dots, groups are bubbles with their number and a ring of layer shares. */
+.build-dot {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid #fff;
+  background: #a0522d;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 15%);
+  cursor: pointer;
+}
+
+.build-dot-permitted {
+  background: #fff;
+  border-color: #8d4a1f;
+}
+
+.build-dot-requested {
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border-color: #80868b;
+}
+
+.build-dot-road {
+  background: #00796b;
+}
+
+.build-cluster {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 30%);
+  cursor: pointer;
+}
+
+/* The white disc inside the ring, with the number. */
+.build-cluster span {
+  display: grid;
+  place-items: center;
+  width: calc(100% - 8px);
+  height: calc(100% - 8px);
+  border-radius: 50%;
+  background: #fff;
+  color: #3b2414;
+  font:
+    700 12px Heebo,
+    Arial,
+    sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.build-cluster:hover span {
+  background: #f6ece4;
+}

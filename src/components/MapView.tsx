@@ -397,13 +397,7 @@ export function MapView({
         }}
       >
         {construction && (
-          <ConstructionLayer
-            data={construction}
-            time={time}
-            hidden={constructionHidden}
-            zoom={zoom}
-            onPopup={setPopup}
-          />
+          <ConstructionLayer data={construction} time={time} hidden={constructionHidden} onPopup={setPopup} />
         )}
         {visible('rail') && <RailLayer network={network} onPopup={setPopup} />}
         {network.sections

@@ -49,7 +49,10 @@ disappears:
 | `construction` | Works                                | Filled outline with **noise zones**: dark to 20 m, light from 20 to 50 m |
 | road works     | `construction` of a `road` project   | Dashed teal line                                                         |
 
-Below zoom 15, or when more than 600 shapes would be in view, every project is a dot. At the "no date" step
+Below zoom 15, or when more than 600 shapes would be in view, projects are counted per area (a 72 px grid fixed
+to the world, `src/domain/cluster.ts`): one bubble per area with the number of
+projects, and a dot for a project alone in its area. Only the projects in view are counted, and only when the map
+stops moving, so the map stays smooth with thousands of projects. At the "no date" step
 only the projects still waiting at the snapshot (`requested`, `permitted`) are shown.
 
 ## Tel Aviv-Yafo mapping (`scripts/construction/sources/telAviv.ts`)

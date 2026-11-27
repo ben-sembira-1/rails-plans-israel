@@ -252,6 +252,16 @@ export const SCENARIOS: readonly Scenario[] = [
     },
   },
   {
+    // Zoomed out, projects are counted per area: bubbles with a number and a ring of layer shares.
+    id: 'construction-overview',
+    title: 'City construction: projects counted per area (zoom 14)',
+    run: async (ui) => {
+      await ui.requireConstruction();
+      await ui.closePanel();
+      await ui.focusMap(32.068, 34.776, 14);
+    },
+  },
+  {
     id: 'construction-popup',
     title: 'City construction: a site popup (Allenby 110)',
     run: async (ui) => {

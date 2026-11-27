@@ -13,6 +13,7 @@ scenario when a new panel or state is added, and update the steps when the UI ch
 | `all-closed`            | Everything closed: no side panel tab open, no details panel                          |
 | `works-closeup`         | Close-up of the Purple Line heavy works on Allenby (zoom 16): the 20 m / 100 m zones |
 | `construction-layer`    | City construction near Allenby at zoom 17: sites with their 20 m / 50 m noise zones  |
+| `construction-overview` | City construction at zoom 14: projects counted per area (bubbles), single dots       |
 | `construction-popup`    | The popup of a construction site (Allenby 110)                                       |
 | `construction-upcoming` | The "no date" step: only the upcoming permits                                        |
 | `trains-tab`            | Side panel open on the trains information tab                                        |

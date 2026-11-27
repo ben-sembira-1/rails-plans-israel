@@ -1,14 +1,20 @@
-import { Polygon, Polyline, useMap } from '@vis.gl/react-google-maps';
+import { AdvancedMarker, Polygon, Polyline, useMap } from '@vis.gl/react-google-maps';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { clickPosition, type OpenPopup } from '../components/popup.ts';
 import { Z } from '../components/sectionStyle.ts';
 import type { ConstructionData, Project } from '../data/construction.ts';
 import type { LatLng } from '../data/validate.ts';
-import { projectsAt, type ConstructionLayer as Layer, type ShownProject } from '../domain/construction.ts';
+import { clusterByGrid, worldPx, type Cluster } from '../domain/cluster.ts';
+import {
+  CONSTRUCTION_LAYERS,
+  projectsAt,
+  type ConstructionLayer as Layer,
+  type ShownProject,
+} from '../domain/construction.ts';
 import { areaBufferRings } from '../domain/geo.ts';
 import { SITE_HIGH_NOISE_M, SITE_LOW_NOISE_M } from '../domain/zones.ts';
 import { ProjectPopup } from './ProjectPopup.tsx';
-import { DETAIL_ZOOM, LAYER_COLOR, MAX_SHAPES, NOISE_COLORS } from './style.ts';
+import { CLUSTER_COLOR, DETAIL_ZOOM, LAYER_COLOR, MAX_SHAPES, NOISE_COLORS } from './style.ts';
 
 const toLatLng = ([lat, lng]: LatLng): google.maps.LatLngLiteral => ({ lat, lng });
 
@@ -114,83 +120,142 @@ function ProjectShape({
   );
 }
 
-const DOT_SCALE: Readonly<Record<Layer, number>> = {
-  construction: 4,
-  permitted: 3.5,
-  requested: 2.5,
-  road: 4,
-};
+/** A single project when zoomed out: a dot in its layer's style; clicking it opens its popup. */
+function ProjectDot({
+  item,
+  onPopup,
+  fetchedAt,
+}: {
+  item: ShownProject;
+  onPopup: OpenPopup;
+  fetchedAt: string;
+}) {
+  const { project: p, layer } = item;
+  const position = toLatLng(p.position);
+  return (
+    <AdvancedMarker
+      position={position}
+      anchorLeft="-50%"
+      anchorTop="-50%"
+      title={p.title}
+      zIndex={layer === 'requested' ? 1 : 2}
+      onClick={() => {
+        onPopup({ position, content: <ProjectPopup project={p} fetchedAt={fetchedAt} /> });
+      }}
+    >
+      <span className={`build-dot build-dot-${layer}`} />
+    </AdvancedMarker>
+  );
+}
 
-/** Below the detail zoom: one `google.maps.Data` layer of dots, which stays fast with thousands of projects. */
-function Dots({
+/** "conic-gradient(...)": the ring of a count bubble, one arc per layer in proportion to its projects. */
+function ringOf(members: readonly ShownProject[]): string {
+  const counts = new Map<Layer, number>();
+  for (const m of members) counts.set(m.layer, (counts.get(m.layer) ?? 0) + 1);
+  let from = 0;
+  const stops = CONSTRUCTION_LAYERS.flatMap((layer) => {
+    const n = counts.get(layer) ?? 0;
+    if (n === 0) return [];
+    const to = from + (n / members.length) * 100;
+    const stop = `${CLUSTER_COLOR[layer]} ${from.toFixed(1)}% ${to.toFixed(1)}%`;
+    from = to;
+    return [stop];
+  });
+  return `conic-gradient(${stops.join(', ')})`;
+}
+
+/** Zooms so that a bubble's projects fill the view; a small area goes straight to the detail zoom. */
+function zoomTo(map: google.maps.Map, c: Cluster<ShownProject>) {
+  const [[south, west], [north, east]] = c.bounds;
+  const target = DETAIL_ZOOM + 1;
+  const sw = worldPx([south, west], target);
+  const ne = worldPx([north, east], target);
+  const div = map.getDiv();
+  if (ne.x - sw.x < div.clientWidth * 0.7 && sw.y - ne.y < div.clientHeight * 0.7) {
+    map.setCenter(toLatLng(c.position));
+    map.setZoom(target);
+  } else {
+    map.fitBounds({ south, west, north, east }, 60);
+  }
+}
+
+/** Several projects close together when zoomed out: a bubble with their number; clicking it zooms in. */
+function CountBubble({ cluster }: { cluster: Cluster<ShownProject> }) {
+  const map = useMap();
+  const n = cluster.members.length;
+  const size = Math.round(26 + 7 * Math.log10(n));
+  return (
+    <AdvancedMarker
+      position={toLatLng(cluster.position)}
+      anchorLeft="-50%"
+      anchorTop="-50%"
+      title={`${n.toLocaleString('he-IL')} פרויקטי בנייה באזור. לחיצה מגדילה את המפה.`}
+      zIndex={3}
+      onClick={() => {
+        if (map) zoomTo(map, cluster);
+      }}
+    >
+      <span
+        className="build-cluster"
+        style={{ width: size, height: size, background: ringOf(cluster.members) }}
+      >
+        <span>{n.toLocaleString('he-IL')}</span>
+      </span>
+    </AdvancedMarker>
+  );
+}
+
+/**
+ * When zoomed out (or with too many projects in view): projects close together are counted in one bubble, so the
+ * map draws a few dozen markers instead of thousands of shapes.
+ */
+function Counts({
   items,
+  zoom,
   onPopup,
   fetchedAt,
 }: {
   items: readonly ShownProject[];
+  zoom: number;
   onPopup: OpenPopup;
   fetchedAt: string;
 }) {
-  const map = useMap();
-  useEffect(() => {
-    if (!map) return undefined;
-    const byId = new Map(items.map((s) => [s.project.id, s]));
-    const data = new google.maps.Data({ map });
-    for (const s of items) {
-      data.add(
-        new google.maps.Data.Feature({
-          id: s.project.id,
-          geometry: new google.maps.Data.Point(toLatLng(s.project.position)),
-          properties: { layer: s.layer },
-        }),
-      );
-    }
-    data.setStyle((f) => {
-      const layer = f.getProperty('layer') as Layer;
-      const hollow = layer === 'permitted' || layer === 'requested';
-      return {
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: DOT_SCALE[layer],
-          fillColor: hollow ? '#ffffff' : LAYER_COLOR[layer],
-          fillOpacity: 1,
-          strokeColor: hollow ? LAYER_COLOR[layer] : '#ffffff',
-          strokeWeight: hollow ? 1.5 : 1,
-        },
-        zIndex: layer === 'requested' ? 1 : 2,
-      };
-    });
-    const click = data.addListener('click', (e: google.maps.Data.MouseEvent) => {
-      const s = byId.get(String(e.feature.getId()));
-      if (!s) return;
-      onPopup({
-        position: e.latLng?.toJSON() ?? toLatLng(s.project.position),
-        content: <ProjectPopup project={s.project} fetchedAt={fetchedAt} />,
-      });
-    });
-    return () => {
-      click.remove();
-      data.setMap(null);
-    };
-  }, [map, items, onPopup, fetchedAt]);
-  return null;
+  const clusters = useMemo(() => clusterByGrid(items, (s) => s.project.position, zoom), [items, zoom]);
+  return (
+    <>
+      {clusters.map((c) =>
+        c.members.length === 1 && c.members[0] ? (
+          <ProjectDot key={c.key} item={c.members[0]} onPopup={onPopup} fetchedAt={fetchedAt} />
+        ) : (
+          <CountBubble key={c.key} cluster={c} />
+        ),
+      )}
+    </>
+  );
 }
 
-/** The map's bounds, updated whenever the map stops moving. */
-function useBounds(): google.maps.LatLngBounds | null {
+interface View {
+  readonly bounds: google.maps.LatLngBounds;
+  readonly zoom: number;
+}
+
+/** The map's bounds and zoom, updated only when the map stops moving (never on every animation frame). */
+function useView(): View | null {
   const map = useMap();
-  const [bounds, setBounds] = useState<google.maps.LatLngBounds | null>(null);
+  const [view, setView] = useState<View | null>(null);
   useEffect(() => {
     if (!map) return undefined;
-    // 'idle' fires once the map is ready and after every move, so it also gives the first bounds.
+    // 'idle' fires once the map is ready and after every move, so it also gives the first view.
     const l = map.addListener('idle', () => {
-      setBounds(map.getBounds() ?? null);
+      const bounds = map.getBounds();
+      const zoom = map.getZoom();
+      setView(bounds && zoom !== undefined ? { bounds, zoom: Math.round(zoom) } : null);
     });
     return () => {
       l.remove();
     };
   }, [map]);
-  return bounds;
+  return view;
 }
 
 /** About 150 m around the view, so shapes don't pop in at the edges. */
@@ -205,23 +270,27 @@ export interface ConstructionLayerProps {
   readonly data: ConstructionData;
   readonly time: number;
   readonly hidden: ReadonlySet<Layer>;
-  readonly zoom: number;
   readonly onPopup: OpenPopup;
 }
 
-/** City construction projects at the selected time: dots when zoomed out; outlines and noise zones when close. */
-export function ConstructionLayer({ data, time, hidden, zoom, onPopup }: ConstructionLayerProps) {
+/**
+ * City construction projects at the selected time: counted per area when zoomed out; outlines and noise zones when
+ * close.
+ */
+export function ConstructionLayer({ data, time, hidden, onPopup }: ConstructionLayerProps) {
   const shown = useMemo(
     () => projectsAt(data, time).filter((s) => !hidden.has(s.layer)),
     [data, time, hidden],
   );
-  const bounds = useBounds();
+  const view = useView();
   const visible = useMemo(
-    () => (bounds === null ? [] : shown.filter((s) => inView(bounds, s.project.position))),
-    [bounds, shown],
+    () => (view === null ? [] : shown.filter((s) => inView(view.bounds, s.project.position))),
+    [view, shown],
   );
-  const detailed = zoom >= DETAIL_ZOOM && bounds !== null && visible.length <= MAX_SHAPES;
-  if (!detailed) return <Dots items={shown} onPopup={onPopup} fetchedAt={data.fetchedAt} />;
+  if (view === null) return null;
+  if (view.zoom < DETAIL_ZOOM || visible.length > MAX_SHAPES) {
+    return <Counts items={visible} zoom={view.zoom} onPopup={onPopup} fetchedAt={data.fetchedAt} />;
+  }
   return (
     <>
       {visible.map((s) => (
