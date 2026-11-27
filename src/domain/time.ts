@@ -1,16 +1,18 @@
 /**
  * Time is a decimal year: 2026 = 2026Q1, 2026.25 = Q2, 2026.5 = Q3, 2026.75 = Q4.
- * Before 2030 the timeline moves by quarter; from 2030 by full year (later dates are too uncertain).
+ * The timeline moves by quarter until 3 years from today, then by full year (later dates are too uncertain).
  */
 
 /** "No announced date": the final step, where the full network is shown. */
 export const NO_DATE = 9999;
 export const TIMELINE_START = 2023.5;
-/** First year shown in full years only. */
-export const YEARLY_FROM = 2030;
-export const LAST_YEAR = 2037;
 /** The data snapshot date (late November 2026). */
 export const TODAY = 2026.75;
+/** How far ahead of today the timeline still moves by quarter. */
+export const QUARTERLY_YEARS = 3;
+/** First year shown in full years only: the year after the last quarter (today + 3 years). */
+export const YEARLY_FROM = Math.floor(TODAY + QUARTERLY_YEARS) + 1;
+export const LAST_YEAR = 2037;
 
 function round2(x: number): number {
   return Math.round(x * 100) / 100;
@@ -26,14 +28,14 @@ export function timelineSteps(): readonly number[] {
 
 export const STEPS: readonly number[] = timelineSteps();
 
-/** Rounds a time onto the timeline grid: quarters before 2030, full years from 2030. */
+/** Rounds a time onto the timeline grid: quarters before `YEARLY_FROM`, full years from it. */
 export function snap(t: number): number {
   if (t >= NO_DATE) return NO_DATE;
   if (t >= YEARLY_FROM - 0.125) return Math.max(YEARLY_FROM, Math.round(t));
   return round2(Math.round(t * 4) / 4);
 }
 
-/** `2026Q4` before 2030, `2031` from 2030, and "no date" for `NO_DATE`. */
+/** `2026Q4` before `YEARLY_FROM`, `2031` from it, and "no date" for `NO_DATE`. */
 export function formatTime(t: number): string {
   if (t >= NO_DATE) return 'ללא מועד';
   const s = snap(t);
@@ -59,4 +61,13 @@ export function nearestStepIndex(t: number): number {
     if (Math.abs(s - t) < Math.abs(b - t)) best = i;
   });
   return best;
+}
+
+/** The grid step just before `t` and just after it (the previous / next buttons); `undefined` at the ends. */
+export function adjacentSteps(t: number): {
+  readonly prev: number | undefined;
+  readonly next: number | undefined;
+} {
+  const i = nearestStepIndex(t);
+  return { prev: STEPS[i - 1], next: STEPS[i + 1] };
 }

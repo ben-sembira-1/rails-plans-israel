@@ -68,14 +68,15 @@ point in time:
 
 ### Timeline
 
-- A bar over time. It moves by **quarter** until 2029Q4 and by **full year** from 2030 (later dates are too
-  uncertain for quarters), followed by a final "no announced date" step where the full network is shown as a
+- A bar over time. It moves by **quarter** until 3 years from today (2029Q4) and by **full year** after that
+  (later dates are too uncertain for quarters), followed by a final "no announced date" step where the full network is shown as a
   plain map.
-- **Previous / next** buttons, side by side next to the current time, jump to the previous or next event.
-- Every event is a marker on the bar; the main milestones (2023Q3, 2028Q2, 2028Q4, 2030, 2034–37, no date) are
+- **Previous / next** buttons, side by side next to the current time, move one step of the bar: any quarter
+  until 3 years from today, then one year. They don't skip to events.
+- Events are only points on the bar (click one to jump to it); the main milestones (2023Q3, 2028Q2, 2028Q4, 2030, 2034–37, no date) are
   bigger and labelled, and the current marker is highlighted. Under the bar: the current caption. On a phone the
   markers are small, unlabelled and not tappable (the slider and the panel's event list do that job).
-- Dates are formatted `YYYYQn` before 2030 and `YYYY` from 2030.
+- Dates are formatted `YYYYQn` on the quarterly part and `YYYY` on the yearly part.
 
 ### Engineering
 

@@ -103,21 +103,30 @@ describe('App', () => {
     expect(screen.getByTestId('map')).toHaveAttribute('data-time', '2031');
   });
 
-  it('steps to the previous and next event', async () => {
+  it('steps back and forward by quarter, then by year, skipping no step', async () => {
     render(<App network={NETWORK} maps={MAPS} />);
     const map = screen.getByTestId('map');
-    await userEvent.click(screen.getByRole('button', { name: 'האירוע הבא' }));
-    expect(map).toHaveAttribute('data-time', '2028.25');
-    await userEvent.click(screen.getByRole('button', { name: 'האירוע הקודם' }));
-    await userEvent.click(screen.getByRole('button', { name: 'האירוע הקודם' }));
+    await userEvent.click(screen.getByRole('button', { name: 'צעד קדימה' }));
+    expect(map).toHaveAttribute('data-time', '2027');
+    await userEvent.click(screen.getByRole('button', { name: 'צעד אחורה' }));
+    await userEvent.click(screen.getByRole('button', { name: 'צעד אחורה' }));
     expect(map).toHaveAttribute('data-time', '2026.5');
   });
 
-  it('disables "previous" at the first event and "next" at the last', async () => {
+  it('steps by full year from 2030', async () => {
+    render(<App network={NETWORK} maps={MAPS} initialTime={2029.75} />);
+    const map = screen.getByTestId('map');
+    await userEvent.click(screen.getByRole('button', { name: 'צעד קדימה' }));
+    expect(map).toHaveAttribute('data-time', '2030');
+    await userEvent.click(screen.getByRole('button', { name: 'צעד קדימה' }));
+    expect(map).toHaveAttribute('data-time', '2031');
+  });
+
+  it('disables "back" at the first step and "forward" at the last', async () => {
     render(<App network={NETWORK} maps={MAPS} initialTime={2023.5} />);
-    expect(screen.getByRole('button', { name: 'האירוע הקודם' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'צעד אחורה' })).toBeDisabled();
     await userEvent.click(within(milestonesGroup()).getByRole('button', { name: 'ללא מועד' }));
-    expect(screen.getByRole('button', { name: 'האירוע הבא' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'צעד קדימה' })).toBeDisabled();
   });
 
   it('puts every event on the bar, with the milestones as main markers', async () => {
@@ -181,12 +190,12 @@ describe('App', () => {
 
   it('keeps previous and next together, before the bar', () => {
     render(<App network={NETWORK} maps={MAPS} />);
-    const steps = screen.getByRole('group', { name: 'מעבר בין אירועים' });
+    const steps = screen.getByRole('group', { name: 'מעבר בציר הזמן' });
     expect(
       within(steps)
         .getAllByRole('button')
         .map((b) => b.getAttribute('aria-label')),
-    ).toEqual(['האירוע הקודם', 'האירוע הבא']);
+    ).toEqual(['צעד אחורה', 'צעד קדימה']);
     const timeline = screen.getByRole('region', { name: 'ציר זמן' });
     const panel = screen.getByRole('complementary', { name: 'לוח בקרה' });
     // The timeline comes before the side panel and the map.
@@ -212,18 +221,18 @@ describe('App', () => {
     expect(within(banner).getByText(`v${__APP_VERSION__}`)).toBeInTheDocument();
     expect(within(banner).getByLabelText('הזמן המוצג')).toHaveTextContent('2026Q4');
     expect(within(banner).getByRole('button', { name: 'admin' })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'האירוע הבא' }));
-    expect(within(banner).getByLabelText('הזמן המוצג')).toHaveTextContent('2028Q2');
+    await userEvent.click(screen.getByRole('button', { name: 'צעד קדימה' }));
+    expect(within(banner).getByLabelText('הזמן המוצג')).toHaveTextContent('2027Q1');
   });
 
   it('shows a page instead of the map and keeps the timeline position', async () => {
     const { rerender } = render(<App network={NETWORK} maps={MAPS} />);
-    await userEvent.click(screen.getByRole('button', { name: 'האירוע הבא' }));
+    await userEvent.click(screen.getByRole('button', { name: 'צעד קדימה' }));
     rerender(<App network={NETWORK} maps={MAPS} page={<main>admin page</main>} />);
     expect(screen.queryByTestId('map')).toBeNull();
     expect(screen.getByText('admin page')).toBeInTheDocument();
     rerender(<App network={NETWORK} maps={MAPS} />);
-    expect(screen.getByTestId('map')).toHaveAttribute('data-time', '2028.25');
+    expect(screen.getByTestId('map')).toHaveAttribute('data-time', '2027');
   });
 
   it('explains a missing Google Maps key instead of the map', () => {
