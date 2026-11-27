@@ -3,8 +3,9 @@
 GitHub Pages only serves static files, so sign-in and per-user data use Firebase (free Spark plan is enough):
 
 - **Firebase Authentication** – Google sign-in.
-- **Cloud Firestore** – `users/{uid}` (access request, approval flag, last timeline position) and
-  `config/access` (the admin list). [`firestore.rules`](../firestore.rules) enforces who may read and write what.
+- **Cloud Firestore** – `users/{uid}` (access request, approval flag, last timeline position),
+  `users/{uid}/places/{placeId}` (places of interest) with `comments/{commentId}`, and `config/access` (the admin
+  list). [`firestore.rules`](../firestore.rules) enforces who may read and write what.
 
 The map data itself is part of this public repository, so the gate controls access to the site, not secrecy of the
 data.
@@ -34,7 +35,11 @@ data.
      (auto created by Google Service)") and add to **Authorized JavaScript origins**:
      `https://ben-sembira-1.github.io` (and `http://localhost:5173` for local development).
      Without `VITE_GOOGLE_CLIENT_ID`, the site falls back to Firebase's popup (works on desktop only).
-8. Re-run the **Release and deploy** workflow (or merge any PR).
+8. Optional: restrict the Firebase web API key (Google Cloud → **APIs & Services → Credentials → Browser key (auto
+   created by Firebase)** → **Websites**) to **`https://ben-sembira-1.github.io/*`**, by origin, not to
+   `…/rails-plans-israel/`. Browsers send only the origin (`https://ben-sembira-1.github.io/`) as the referrer of
+   Firebase's sign-in requests, so a path restriction blocks sign-in with `auth/requests-from-referer-…-are-blocked`.
+9. Re-run the **Release and deploy** workflow (or merge any PR).
 
 ## Approving people
 

@@ -38,8 +38,18 @@ body {
   direction: ltr;
 }
 
-.leaflet-tooltip,
-.leaflet-popup-content {
+.map-missing {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* Google's info window is LTR; our content is Hebrew. */
+.pop {
   direction: rtl;
   text-align: right;
   font-family: Heebo, Arial, sans-serif;
@@ -526,33 +536,66 @@ input:focus-visible {
 }
 
 /* Station labels: permanent tooltips shown only when zoomed in. */
-.leaflet-tooltip.lbl {
-  display: none;
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-  padding: 0 2px;
-  font-size: 11.5px;
-  font-weight: 500;
-  text-shadow:
-    0 0 2px #fff,
-    0 0 3px #fff,
-    0 0 4px #fff;
+/* Station markers (advanced markers: HTML on the map) */
+.stn {
+  position: relative;
+  display: block;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2.5px solid;
+  background: #fff;
+  cursor: pointer;
 }
 
-.show-labels .leaflet-tooltip.lbl {
+.stn.metro {
+  width: 13px;
+  height: 13px;
+  border-width: 3px;
+}
+
+.stn.fut {
+  opacity: 0.45;
+}
+
+.stn.rail {
+  width: 9px;
+  height: 9px;
+  border: 2px solid #333;
+}
+
+.stn .lbl {
+  display: none;
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 5px);
+  transform: translateY(-50%);
+  white-space: nowrap;
+  font:
+    600 11px Heebo,
+    Arial,
+    sans-serif;
+  color: #1d1d1f;
+  text-shadow:
+    0 0 3px #fff,
+    0 0 3px #fff,
+    0 0 3px #fff;
+  pointer-events: none;
+}
+
+.stn .rail-lbl {
+  right: auto;
+  left: calc(100% + 5px);
+}
+
+.show-labels .stn .lbl {
   display: block;
 }
 
-.show-labels .leaflet-tooltip.lbl.fut {
-  color: #888;
+.show-labels .stn.fut .lbl {
+  color: #5f6368;
 }
 
-.leaflet-tooltip.lbl::before {
-  display: none;
-}
-
-/* Full-page screens (sign-in, waiting for approval) */
 .screen {
   min-height: 100%;
   display: grid;
@@ -1055,5 +1098,269 @@ input:focus-visible {
   .admin-card li {
     flex-direction: column;
     align-items: stretch;
+  }
+}
+
+/* Side panel tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin: 8px 0 4px;
+  padding: 3px;
+  background: #eef1f6;
+  border-radius: 12px;
+}
+
+.tab {
+  flex: 1;
+  font:
+    600 13px Heebo,
+    Arial,
+    sans-serif;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 9px;
+  padding: 7px 8px;
+  cursor: pointer;
+}
+
+.tab.on {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 1px 4px rgb(11 21 48 / 12%);
+}
+
+/* Places of interest */
+.map-search {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(420px, calc(100% - 120px));
+  z-index: 5;
+}
+
+.place-search gmp-place-autocomplete {
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgb(0 0 0 / 22%);
+  color-scheme: light;
+}
+
+.search-error {
+  margin-top: 6px;
+  background: #fff;
+  color: #b3261e;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
+}
+
+.place-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+  font:
+    13px Heebo,
+    Arial,
+    sans-serif;
+  text-align: right;
+}
+
+.place-card > b {
+  font-size: 15px;
+}
+
+.place-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.comments {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.comments li {
+  background: #f5f7fb;
+  border-radius: 8px;
+  padding: 6px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+
+.comment-text {
+  flex-basis: 100%;
+  white-space: pre-wrap;
+}
+
+.link-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  color: #b3261e;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  margin-inline-start: auto;
+}
+
+.comment-form {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.comment-form textarea {
+  flex: 1;
+  font:
+    13px Heebo,
+    Arial,
+    sans-serif;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  resize: vertical;
+}
+
+.places-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.place-item {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: right;
+  font:
+    13px Heebo,
+    Arial,
+    sans-serif;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 10px;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.place-item.on {
+  border-color: #7b2ff7;
+  box-shadow: 0 0 0 2px rgb(123 47 247 / 20%);
+}
+
+.place-pin {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #7b2ff7;
+  color: #fff;
+  font-size: 13px;
+}
+
+.place-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Google's place details, on the right of the map */
+.details-panel {
+  flex: none;
+  width: 380px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #fff;
+  border-left: 1px solid #e3e7ef;
+  z-index: 1050;
+}
+
+.details-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e3e7ef;
+}
+
+.details-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.details-body gmp-place-details {
+  width: 100%;
+  color-scheme: light;
+}
+
+@media (width <= 800px) {
+  /* A bottom sheet over the map, so the timeline and the side-panel toggle stay reachable. */
+  .details-panel {
+    position: absolute;
+    inset: auto 0 0;
+    height: 55%;
+    width: auto;
+    border-left: none;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -8px 30px rgb(11 21 48 / 25%);
+    z-index: 1030;
+  }
+
+  .map-search {
+    width: calc(100% - 70px);
+    left: auto;
+    right: 10px;
+    transform: none;
+  }
+}
+
+/* Desktop with the side panel closed (click the open tab): the timeline and tab headers float over a full-width map. */
+@media (width > 800px) {
+  .workspace.panel-closed .side-column {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 380px;
+    border-right: none;
+    border-bottom-right-radius: 14px;
+    box-shadow: 0 6px 24px rgb(11 21 48 / 18%);
+  }
+
+  .workspace.panel-closed .side-panel {
+    flex: none;
+    overflow: visible;
+    padding-bottom: 10px;
+    border-bottom-right-radius: 14px;
+  }
+}
+
+/* With the desktop side panel closed it floats over the map's first 380px; center the search in the rest. */
+@media (width > 800px) {
+  .workspace.panel-closed .map-search {
+    left: calc(50% + 190px);
+    width: min(420px, calc(100% - 420px));
   }
 }

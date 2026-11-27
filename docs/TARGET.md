@@ -24,7 +24,7 @@ point in time:
 
 ### Map
 
-- A normal zoomable street map (Esri World Street Map tiles, no API key), with topographic and satellite options.
+- A **Google Map** (street map with satellite and terrain options), in Hebrew.
 - Every line is split into **sections**, taken from the published works schedule. Each section has an ordered list
   of **phases** (`none` = planned, `minor` = light works, `major` = heavy works, `open` = in service).
 - A section is drawn according to its phase at the selected time:
@@ -41,13 +41,25 @@ point in time:
 - Clicking a section shows all its phases with their date ranges.
 - A legend explains the styles and lets the user hide individual lines.
 
+### Places of interest
+
+- A **search box** on the map (Google place search, biased to Gush Dan) finds a place; clicking a Google point of
+  interest on the map does the same. The place is shown with a card to **save it as a place of interest**.
+- Saved places are **star pins** on the map. A place's card lists its **comments** (add and delete), and can
+  remove the place.
+- **Google details**: from a card, a panel on the right of the map shows Google's own view of the place (photos,
+  opening hours, rating, reviews, website, …). On a phone it covers the map.
+- The side panel has two tabs: **trains information** (everything below) and **places of interest** (a list;
+  clicking one shows it on the map).
+- Places and comments are saved in Firebase **per user**: only the (approved) user can read or change their own.
+
 ### Layout
 
 - A **top strip** with the logo, the app name, the version and the time currently shown on the timeline. Admins
   also get an **admin center** button (with a pending-requests count) that opens the access-management page; every
   signed-in user gets an account menu (sign out).
 - The **timeline** is always right under the top strip, on every screen size.
-- **Desktop**: a **side panel on the left** holds all the controls and the documentation: the status at the
+- **Desktop**: a **side panel on the left** holds all the controls and the documentation, in a trains tab: the status at the
   current time (milestone text, sections under heavy and light works), the milestones and works-status events
   (buttons), the layer toggles and "how to read the map" (line styles, works zones, sources). The map fills the
   rest.
@@ -70,7 +82,8 @@ point in time:
 - Vite + React + TypeScript with the strictest compiler settings, and strict ESLint.
 - Data lives in JSON (`src/data/network.json`), typed by `src/data/schema.ts`, and validated by unit tests.
 - Domain logic (time steps, formatting, status at a time, events) is pure TypeScript with unit tests.
-- `pre-commit` runs formatting, linting and type checks locally and in CI. CI also runs the tests and the build.
+- `pre-commit` runs formatting, linting, type checks and a secret scan (gitleaks) locally and in CI. CI also scans
+  the whole git history for secrets, and runs the tests and the build.
 - **Versioning**: the version in `package.json` is shown in the UI. Every PR to `master` must bump it above the
   latest `vX.Y.Z` tag; a CI job fails otherwise.
 - **CD**: on every merge to `master`, a workflow tags the commit `vX.Y.Z` and deploys the site to GitHub Pages.

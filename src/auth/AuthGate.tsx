@@ -1,9 +1,11 @@
 import { GoogleAuthProvider, signInWithCredential, signInWithPopup, signOut } from 'firebase/auth';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { App } from '../App.tsx';
 import { Logo } from '../components/Logo.tsx';
 import { APP_NAME } from '../components/TopBar.tsx';
 import type { Network } from '../data/schema.ts';
+import type { MapsConfig } from '../map/config.ts';
+import { createFirestoreStore } from '../places/firestoreStore.ts';
 import { AdminCenter } from './AdminPanel.tsx';
 import { useAllUsers } from './useAllUsers.ts';
 import type { FirebaseServices } from './firebase.ts';
@@ -105,15 +107,18 @@ function useSavePosition(fb: FirebaseServices, uid: string): (t: number) => void
 function SignedInApp({
   fb,
   network,
+  maps,
   access,
   onSignOut,
 }: {
   fb: FirebaseServices;
   network: Network;
+  maps: MapsConfig | null;
   access: Extract<Access, { kind: 'approved' }>;
   onSignOut: () => void;
 }) {
   const save = useSavePosition(fb, access.user.uid);
+  const places = useMemo(() => createFirestoreStore(fb.db, access.user.uid), [fb, access.user.uid]);
   // Restore the position once, when the map first opens.
   const [initialTime] = useState(access.savedTime);
   const [route, navigate] = useHashRoute();
@@ -123,6 +128,8 @@ function SignedInApp({
   return (
     <App
       network={network}
+      maps={maps}
+      places={places}
       {...(initialTime === null ? {} : { initialTime })}
       onTimeChange={save}
       headerActions={
@@ -164,11 +171,12 @@ function PopupSignInButton({ onClick }: { onClick: () => void }) {
 export interface AuthGateProps {
   readonly fb: FirebaseServices;
   readonly network: Network;
+  readonly maps: MapsConfig | null;
   /** OAuth web client ID for Google Identity Services; `null` falls back to Firebase's popup. */
   readonly clientId: string | null;
 }
 
-export function AuthGate({ fb, network, clientId }: AuthGateProps) {
+export function AuthGate({ fb, network, maps, clientId }: AuthGateProps) {
   const access = useAccess(fb);
   const [signInError, setSignInError] = useState<string | null>(null);
   const fail = useCallback((e: unknown) => {
@@ -199,6 +207,13 @@ export function AuthGate({ fb, network, clientId }: AuthGateProps) {
     return <AccessScreen access={access} signIn={signIn} onSignOut={onSignOut} signInError={signInError} />;
   }
   return (
-    <SignedInApp key={access.user.uid} fb={fb} network={network} access={access} onSignOut={onSignOut} />
+    <SignedInApp
+      key={access.user.uid}
+      fb={fb}
+      network={network}
+      maps={maps}
+      access={access}
+      onSignOut={onSignOut}
+    />
   );
 }

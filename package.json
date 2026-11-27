@@ -1,10 +1,10 @@
 {
   "name": "rails-plans-israel",
   "private": true,
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Planned light rail, metro and Israel Railways lines of Gush Dan on a map with a playable works timeline",
   "type": "module",
-  "license": "Apache-2.0",
+  "license": "UNLICENSED",
   "engines": {
     "node": ">=24"
   },
@@ -17,21 +17,22 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "regression": "node regression/run.ts"
   },
   "dependencies": {
+    "@vis.gl/react-google-maps": "^1.10.2",
     "firebase": "^13.4.0",
-    "leaflet": "^1.9.4",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1",
-    "react-leaflet": "^5.0.0"
+    "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.1",
     "@testing-library/jest-dom": "^8.0.0",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.13",
-    "@types/leaflet": "^1.9.23",
+    "@types/google.maps": "^3.67.0",
     "@types/node": "^26.6.11",
     "@types/react": "^19.3.3",
     "@types/react-dom": "^19.3.0",
