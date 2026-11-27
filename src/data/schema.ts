@@ -1,7 +1,7 @@
 import { isLineId, type LineId } from '../domain/lines.ts';
+import { validators, type LatLng } from './validate.ts';
 
-/** [latitude, longitude] */
-export type LatLng = readonly [number, number];
+export type { LatLng } from './validate.ts';
 
 /** Works status of a section at a point in time. */
 export type WorksStatus = 'none' | 'minor' | 'major' | 'open';
@@ -57,57 +57,15 @@ export interface Network {
   readonly railFallback: readonly (readonly LatLng[])[];
 }
 
-class SchemaError extends Error {
-  constructor(path: string, expected: string) {
-    super(`network.json: ${path} must be ${expected}`);
-    this.name = 'SchemaError';
-  }
-}
+const { fail, obj, arr, str, num, bool, latLng, path, unique } = validators('network.json');
 
-type Obj = Record<string, unknown>;
-
-function obj(v: unknown, path: string): Obj {
-  if (typeof v !== 'object' || v === null || Array.isArray(v)) throw new SchemaError(path, 'an object');
-  return v as Obj;
-}
-function arr(v: unknown, path: string): readonly unknown[] {
-  if (!Array.isArray(v)) throw new SchemaError(path, 'an array');
-  return v as readonly unknown[];
-}
-function str(v: unknown, path: string): string {
-  if (typeof v !== 'string' || v.length === 0) throw new SchemaError(path, 'a non-empty string');
-  return v;
-}
-function num(v: unknown, path: string): number {
-  if (typeof v !== 'number' || !Number.isFinite(v)) throw new SchemaError(path, 'a finite number');
-  return v;
-}
-function bool(v: unknown, path: string): boolean {
-  if (typeof v !== 'boolean') throw new SchemaError(path, 'a boolean');
-  return v;
-}
-function line(v: unknown, path: string): LineId {
-  if (!isLineId(v)) throw new SchemaError(path, 'a line id');
-  return v;
-}
-function latLng(v: unknown, path: string): LatLng {
-  const a = arr(v, path);
-  const lat = num(a[0], `${path}[0]`);
-  const lng = num(a[1], `${path}[1]`);
-  // Gush Dan and its surroundings.
-  if (a.length !== 2 || lat < 31.5 || lat > 32.5 || lng < 34.5 || lng > 35.2) {
-    throw new SchemaError(path, '[lat, lng] inside central Israel');
-  }
-  return [lat, lng];
-}
-function path(v: unknown, p: string): readonly LatLng[] {
-  const pts = arr(v, p).map((x, i) => latLng(x, `${p}[${i}]`));
-  if (pts.length < 2) throw new SchemaError(p, 'a path of at least two points');
-  return pts;
+function line(v: unknown, p: string): LineId {
+  if (!isLineId(v)) fail(p, 'a line id');
+  return v as LineId;
 }
 function status(v: unknown, p: string): WorksStatus {
   const s = WORKS_STATUSES.find((x) => x === v);
-  if (s === undefined) throw new SchemaError(p, `one of ${WORKS_STATUSES.join(', ')}`);
+  if (s === undefined) return fail(p, `one of ${WORKS_STATUSES.join(', ')}`);
   return s;
 }
 
@@ -123,12 +81,12 @@ function phase(v: unknown, p: string): Phase {
 function section(v: unknown, p: string): Section {
   const o = obj(v, p);
   const phases = arr(o['phases'], `${p}.phases`).map((x, i) => phase(x, `${p}.phases[${i}]`));
-  if (phases.length === 0) throw new SchemaError(`${p}.phases`, 'non-empty');
+  if (phases.length === 0) fail(`${p}.phases`, 'non-empty');
   phases.forEach((ph, i) => {
     if (i === 0) return;
     const prevSince = phases[i - 1]?.since ?? null;
     if (ph.since === null || (prevSince !== null && ph.since <= prevSince)) {
-      throw new SchemaError(`${p}.phases[${i}].since`, 'set and later than the previous phase');
+      fail(`${p}.phases[${i}].since`, 'set and later than the previous phase');
     }
   });
   return {
@@ -179,8 +137,6 @@ export function parseNetwork(raw: unknown): Network {
     railStations: arr(o['railStations'], 'railStations').map((x, i) => railStation(x, `railStations[${i}]`)),
     railFallback: arr(o['railFallback'], 'railFallback').map((x, i) => path(x, `railFallback[${i}]`)),
   };
-  const ids = [...network.sections.map((s) => s.id), ...network.sites.map((s) => s.id)];
-  const dup = ids.find((id, i) => ids.indexOf(id) !== i);
-  if (dup !== undefined) throw new SchemaError(`id "${dup}"`, 'unique');
+  unique([...network.sections.map((s) => s.id), ...network.sites.map((s) => s.id)]);
   return network;
 }

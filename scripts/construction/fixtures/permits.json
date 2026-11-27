@@ -1,0 +1,419 @@
+{
+  "features": [
+    {
+      "properties": {
+        "request_num": 20230013,
+        "permission_date": 1793639940000,
+        "permission_num": 20241800,
+        "expiry_date": 1982966400000,
+        "open_request": 1672657620000,
+        "url_hadmaya": "https://archive-binyan.tel-aviv.gov.il/pages/results.aspx?owstikid=03260080&owsdoctikbakashanummekuvenet=24655&owsdocumenttype=%d7%94%d7%93%d7%9e%d7%99%d7%95%d7%aa",
+        "sw_tama_38": "כן",
+        "sug_bakasha": "בניה חדשה בניין מגורים גבוה (מעל 13 מ') , בניה חדשה בנייה חדשה תמ\"א 38 , בניה חדשה מרתפים",
+        "finished": "",
+        "occupation": "",
+        "tr_hathalat_bniya": null,
+        "building_stage": "קיים היתר",
+        "yechidot_diyur": 9,
+        "addresses": "יעל 8"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [34.776264, 32.078091],
+            [34.776321, 32.078292],
+            [34.776225, 32.078309],
+            [34.776175, 32.078116],
+            [34.776264, 32.078091]
+          ]
+        ]
+      }
+    },
+    {
+      "properties": {
+        "request_num": 20230034,
+        "permission_date": 1792690320000,
+        "permission_num": 20242174,
+        "expiry_date": 1982016000000,
+        "open_request": 1672755180000,
+        "url_hadmaya": "https://archive-binyan.tel-aviv.gov.il/pages/results.aspx?owstikid=02120180&owsdoctikbakashanummekuvenet=21192&owsdocumenttype=%d7%94%d7%93%d7%9e%d7%99%d7%95%d7%aa",
+        "sw_tama_38": "כן",
+        "sug_bakasha": "בניה חדשה בנייה חדשה תמ\"א 38 , תוספות בניה הריסה",
+        "finished": "",
+        "occupation": "",
+        "tr_hathalat_bniya": null,
+        "building_stage": "קיים היתר",
+        "yechidot_diyur": 18,
+        "addresses": "אלכסנדר ינאי 20"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [34.782587, 32.093403],
+            [34.782678, 32.093393],
+            [34.782672, 32.093359],
+            [34.782778, 32.093347],
+            [34.782782, 32.093362],
+            [34.782799, 32.09336],
+            [34.782796, 32.093414],
+            [34.782829, 32.093409],
+            [34.782842, 32.093464],
+            [34.782728, 32.093481],
+            [34.782722, 32.093456],
+            [34.782613, 32.093473],
+            [34.782587, 32.093403]
+          ]
+        ]
+      }
+    },
+    {
+      "properties": {
+        "request_num": 20230021,
+        "permission_date": 1749481920000,
+        "permission_num": 20241983,
+        "expiry_date": 1938729600000,
+        "open_request": 1672728000000,
+        "url_hadmaya": "https://archive-binyan.tel-aviv.gov.il/pages/results.aspx?owstikid=01941520&owsdoctikbakashanummekuvenet=19460&owsdocumenttype=%d7%94%d7%93%d7%9e%d7%99%d7%95%d7%aa",
+        "sw_tama_38": "כן",
+        "sug_bakasha": "בניה חדשה בניין מגורים גבוה (מעל 13 מ') , בניה חדשה חפירה ו/או דיפון , בניה חדשה בנייה חדשה תמ\"א 38 , בניה חדשה מרתפים",
+        "finished": "",
+        "occupation": "",
+        "tr_hathalat_bniya": 1768694400000,
+        "building_stage": "בבניה",
+        "yechidot_diyur": 38,
+        "addresses": "ז'בוטינסקי 152"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [34.79406, 32.085722],
+            [34.794069, 32.085768],
+            [34.79395, 32.085791],
+            [34.793946, 32.085772],
+            [34.793921, 32.085777],
+            [34.793888, 32.085653],
+            [34.793974, 32.085634],
+            [34.793988, 32.085687],
+            [34.794033, 32.085693],
+            [34.794042, 32.085726],
+            [34.79406, 32.085722]
+          ]
+        ]
+      }
+    },
+    {
+      "properties": {
+        "request_num": 20230027,
+        "permission_date": 1719327060000,
+        "permission_num": 20240411,
+        "expiry_date": 1908576000000,
+        "open_request": 1672739580000,
+        "url_hadmaya": "",
+        "sw_tama_38": "לא",
+        "sug_bakasha": "בניה חדשה בניין דירה/קוטג' , תוספות בניה הריסה",
+        "finished": "",
+        "occupation": "",
+        "tr_hathalat_bniya": 1741046400000,
+        "building_stage": "בבניה",
+        "yechidot_diyur": 1,
+        "addresses": "שביל האספרגוס 6"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [34.800124, 32.068192],
+            [34.800168, 32.068184],
+            [34.800173, 32.068203],
+            [34.800192, 32.068199],
+            [34.800221, 32.068324],
+            [34.800158, 32.068335],
+            [34.800124, 32.068192]
+          ]
+        ]
+      }
+    },
+    {
+      "properties": {
+        "request_num": 20230012,
+        "permission_date": 1699533360000,
+        "permission_num": 20231113,
+        "expiry_date": 1888876800000,
+        "open_request": 1672655340000,
+        "url_hadmaya": "",
+        "sw_tama_38": "לא",
+        "sug_bakasha": "בניה חדשה בניין דירה/קוטג'",
+        "finished": "29/10/2026",
+        "occupation": "",
+        "tr_hathalat_bniya": 1703376000000,
+        "building_stage": "קיימת לפחות תעודת גמר אחת",
+        "yechidot_diyur": 1,
+        "addresses": "גור (מוטה) מרדכי 69"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [34.809325, 32.11822],
+            [34.809428, 32.118227],
+            [34.809425, 32.118332],
+            [34.809322, 32.11833],
+            [34.809325, 32.11822]
+          ]
+        ]
+      }
+    },
+    {
+      "properties": {
+        "request_num": 20230200,
+        "permission_date": 1725987360000,
+        "permission_num": 20240123,
+        "expiry_date": 1915228800000,
+        "open_request": 1674742560000,
+        "url_hadmaya": "",
+        "sw_tama_38": "לא",
+        "sug_bakasha": "בניה חדשה בניין דירה/קוטג'",
+        "finished": "29/07/2026",
+        "occupation": "",
+        "tr_hathalat_bniya": 1780531200000,
+        "building_stage": "קיימת לפחות תעודת גמר אחת",
+        "yechidot_diyur": 1,
+        "addresses": "עקיבא אריה 20, חיותמן 10"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [34.79221, 32.089218],
+            [34.79222, 32.089324],
+            [34.792095, 32.089335],
+            [34.792087, 32.089229],
+            [34.79221, 32.089218]
+          ]
+        ]
+      }
+    },
+    {
+      "properties": {
+        "request_num": 20200150,
+        "permission_date": 1680539580000,
+        "permission_num": 20221418,
+        "expiry_date": 1869868800000,
+        "open_request": 1580205840000,
+        "url_hadmaya": "https://archive-binyan.tel-aviv.gov.il/pages/results.aspx?owstikid=40170560&owsdoctikbakashanummekuvenet=13599&owsdocumenttype=%d7%94%d7%93%d7%9e%d7%99%d7%95%d7%aa",
+        "sw_tama_38": "לא",
+        "sug_bakasha": "בניה חדשה בניין מגורים לא גבוה (עד 13 מ')",
+        "finished": "",
+        "occupation": "",
+        "tr_hathalat_bniya": 1785715200000,
+        "building_stage": "בבניה",
+        "yechidot_diyur": 3,
+        "addresses": "התקוה 56"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [34.789895, 32.051111],
+            [34.789907, 32.051157],
+            [34.78977, 32.051185],
+            [34.78976, 32.051147],
+            [34.789895, 32.051111]
+          ]
+        ]
+      }
+    },
+    {
+      "properties": {
+        "request_num": 20221665,
+        "permission_date": 1695802740000,
+        "permission_num": 20230936,
+        "expiry_date": 1885161600000,
+        "open_request": 1666085460000,
+        "url_hadmaya": "",
+        "sw_tama_38": "לא",
+        "sug_bakasha": "בניה חדשה בניין דירה/קוטג' , תוספות בניה הריסה",
+        "finished": "",
+        "occupation": "",
+        "tr_hathalat_bniya": 1721865600000,
+        "building_stage": "בבניה",
+        "yechidot_diyur": 1,
+        "addresses": "מבשר 88"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [34.789894, 32.049213],
+            [34.789907, 32.049286],
+            [34.789809, 32.049308],
+            [34.789796, 32.049228],
+            [34.789894, 32.049213]
+          ]
+        ]
+      }
+    },
+    {
+      "properties": {
+        "request_num": 20230524,
+        "permission_date": 1737033540000,
+        "permission_num": 20242164,
+        "expiry_date": 1926288000000,
+        "open_request": 1681633200000,
+        "url_hadmaya": "",
+        "sw_tama_38": "לא",
+        "sug_bakasha": "בניה חדשה בניין מגורים לא גבוה (עד 13 מ')",
+        "finished": "",
+        "occupation": "",
+        "tr_hathalat_bniya": 1746316800000,
+        "building_stage": "בבניה",
+        "yechidot_diyur": 2,
+        "addresses": "מבשר 63, מבשר 63"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [34.790297, 32.050212],
+            [34.790312, 32.05028],
+            [34.79019, 32.050311],
+            [34.790179, 32.050303],
+            [34.79018, 32.050264],
+            [34.79028, 32.050249],
+            [34.79027, 32.050217],
+            [34.790297, 32.050212]
+          ]
+        ]
+      }
+    },
+    {
+      "properties": {
+        "request_num": 20230524,
+        "permission_date": 1737033540000,
+        "permission_num": 20242164,
+        "expiry_date": 1926288000000,
+        "open_request": 1681633200000,
+        "url_hadmaya": "",
+        "sw_tama_38": "לא",
+        "sug_bakasha": "בניה חדשה בניין מגורים לא גבוה (עד 13 מ')",
+        "finished": "",
+        "occupation": "",
+        "tr_hathalat_bniya": 1746316800000,
+        "building_stage": "בבניה",
+        "yechidot_diyur": 2,
+        "addresses": "מבשר 63, מבשר 63"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [34.790179, 32.050352],
+            [34.790172, 32.050328],
+            [34.79022, 32.050317],
+            [34.790227, 32.050347],
+            [34.790179, 32.050352]
+          ]
+        ]
+      }
+    },
+    {
+      "properties": {
+        "request_num": 20170503,
+        "permission_date": 1659540240000,
+        "permission_num": 20220946,
+        "expiry_date": 1754179200000,
+        "open_request": 1490002920000,
+        "url_hadmaya": "",
+        "sw_tama_38": "לא",
+        "sug_bakasha": "שינויים-מהיר הארכת תוקף החלטה",
+        "finished": "",
+        "occupation": "",
+        "tr_hathalat_bniya": 1786579200000,
+        "building_stage": "בבניה",
+        "yechidot_diyur": 11,
+        "addresses": "מקוה ישראל 16"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [34.775544, 32.06246],
+            [34.775559, 32.062422],
+            [34.775578, 32.062427],
+            [34.775621, 32.062304],
+            [34.775706, 32.062325],
+            [34.775647, 32.062487],
+            [34.775544, 32.06246]
+          ]
+        ]
+      }
+    },
+    {
+      "properties": {
+        "request_num": 20230011,
+        "permission_date": null,
+        "permission_num": 0,
+        "expiry_date": null,
+        "open_request": 1672581480000,
+        "url_hadmaya": "https://archive-binyan.tel-aviv.gov.il/pages/results.aspx?owstikid=02400150&owsdoctikbakashanummekuvenet=20728&owsdocumenttype=%d7%94%d7%93%d7%9e%d7%99%d7%95%d7%aa",
+        "sw_tama_38": "כן",
+        "sug_bakasha": "בניה חדשה בניין מגורים גבוה (מעל 13 מ') , בניה חדשה בנייה חדשה תמ\"א 38",
+        "finished": "",
+        "occupation": "",
+        "tr_hathalat_bniya": null,
+        "building_stage": "בתהליך היתר",
+        "yechidot_diyur": 15,
+        "addresses": "שדרות מוצקין 15"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [34.774896, 32.09085],
+            [34.774933, 32.090932],
+            [34.774715, 32.090975],
+            [34.7747, 32.090893],
+            [34.774896, 32.09085]
+          ]
+        ]
+      }
+    },
+    {
+      "properties": {
+        "request_num": 20230014,
+        "permission_date": null,
+        "permission_num": 0,
+        "expiry_date": null,
+        "open_request": 1672658040000,
+        "url_hadmaya": "https://archive-binyan.tel-aviv.gov.il/pages/results.aspx?owstikid=00030670&owsdoctikbakashanummekuvenet=28147&owsdocumenttype=%d7%94%d7%93%d7%9e%d7%99%d7%95%d7%aa",
+        "sw_tama_38": "כן",
+        "sug_bakasha": "בניה חדשה בנייה חדשה תמ\"א 38 , בניה חדשה מרתפים , תעסוקה בניה חדשה בתי מלון",
+        "finished": "",
+        "occupation": "",
+        "tr_hathalat_bniya": null,
+        "building_stage": "בתהליך היתר",
+        "yechidot_diyur": 0,
+        "addresses": "נחלת בנימין 67, שדרות רוטשילד 24"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [34.77207, 32.06303],
+            [34.771898, 32.062978],
+            [34.771972, 32.062796],
+            [34.7721, 32.062832],
+            [34.772078, 32.062889],
+            [34.77211, 32.062898],
+            [34.772092, 32.062943],
+            [34.772105, 32.062947],
+            [34.77207, 32.06303]
+          ]
+        ]
+      }
+    }
+  ]
+}

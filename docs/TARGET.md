@@ -41,6 +41,22 @@ point in time:
 - Clicking a section shows all its phases with their date ranges.
 - A legend explains the styles and lets the user hide individual lines.
 
+### City construction
+
+- **Building and road works** from the cities' GIS servers (today Tel Aviv-Yafo; see
+  [CONSTRUCTION.md](CONSTRUCTION.md)) follow the same timeline. Each project is requested, then permitted, then
+  under works, then gone.
+- Building sites under works get a real-scale **noise zone** around the site's outline: a dark **high-noise** band
+  up to **20 m** and a light **low-noise** band from **20 m to 50 m**, in brown (apart from the rail zones).
+  Permits waiting to start are brown outlines, requests in process gray outlines (hidden by default), and road
+  works dashed teal lines. Below zoom 15 every project is a dot.
+- Clicking a project shows what is built, its phases with dates (an estimated end is marked), its stage, housing
+  units, TAMA 38, night works, a link to the city's file, the source and the update date.
+- The panel shows the counts at the selected time and has a toggle per layer. At the "no date" step only the
+  upcoming projects (requested or permitted) are shown.
+- A daily GitHub Actions job is the only caller of the city APIs. Its snapshot is served as a static file next
+  to the site.
+
 ### Places of interest
 
 - A **search box** on the map (Google place search, biased to Gush Dan) finds a place; clicking a Google point of

@@ -8,6 +8,8 @@ import {
   useApiIsLoaded,
 } from '@vis.gl/react-google-maps';
 import { Fragment, useEffect, useMemo, useState } from 'react';
+import { ConstructionLayer } from '../construction/ConstructionLayer.tsx';
+import type { ConstructionData } from '../data/construction.ts';
 import type { LatLng, Network, Section, Site, Station, WorksStatus } from '../data/schema.ts';
 import { bufferRings } from '../domain/geo.ts';
 import { LINES, type LayerId } from '../domain/lines.ts';
@@ -20,11 +22,12 @@ import {
   statusAt,
 } from '../domain/status.ts';
 import { formatTime, stepBefore } from '../domain/time.ts';
+import { RAIL_INNER_M as INNER_M, RAIL_OUTER_M as OUTER_M } from '../domain/zones.ts';
+import type { ConstructionLayer as ConstructionLayerId } from '../domain/construction.ts';
+import { clickPosition, type OpenPopup, type Popup } from './popup.ts';
 import { sectionLineStyle, sectionZ, Z } from './sectionStyle.ts';
 
 const LABEL_ZOOM = 15;
-const INNER_M = 20;
-const OUTER_M = 100;
 const INITIAL_BOUNDS = { south: 31.98, west: 34.74, north: 32.17, east: 34.92 };
 
 /** [inner band, outer band] colors. */
@@ -38,17 +41,6 @@ function lineWeight(section: { line: Section['line'] }): number {
 }
 
 const toLatLng = ([lat, lng]: LatLng): google.maps.LatLngLiteral => ({ lat, lng });
-
-/** A popup anchored at a map position. */
-interface Popup {
-  readonly position: google.maps.LatLngLiteral;
-  readonly content: React.ReactNode;
-}
-type OpenPopup = (popup: Popup) => void;
-
-function clickPosition(e: google.maps.MapMouseEvent): google.maps.LatLngLiteral | null {
-  return e.latLng?.toJSON() ?? null;
-}
 
 function SectionPopup({ section }: { section: Section }) {
   return (
@@ -349,13 +341,27 @@ export interface MapViewProps {
   readonly time: number;
   readonly hidden: ReadonlySet<LayerId>;
   readonly mapId: string;
+  /** City construction projects; `null` while loading or when the snapshot is missing. */
+  readonly construction?: ConstructionData | null;
+  readonly constructionHidden?: ReadonlySet<ConstructionLayerId>;
   /** A click on a Google point of interest (shop, park, …). */
   readonly onPoiClick?: (placeId: string, position: google.maps.LatLngLiteral) => void;
   /** Extra layers (e.g. places of interest). */
   readonly children?: React.ReactNode;
 }
 
-export function MapView({ network, time, hidden, mapId, onPoiClick, children }: MapViewProps) {
+const NONE: ReadonlySet<ConstructionLayerId> = new Set();
+
+export function MapView({
+  network,
+  time,
+  hidden,
+  mapId,
+  construction = null,
+  constructionHidden = NONE,
+  onPoiClick,
+  children,
+}: MapViewProps) {
   const [zoom, setZoom] = useState(12);
   const [popup, setPopup] = useState<Popup | null>(null);
   const [labels] = useState(() => labelledStations(network.stations));
@@ -390,6 +396,15 @@ export function MapView({ network, time, hidden, mapId, onPoiClick, children }: 
           }
         }}
       >
+        {construction && (
+          <ConstructionLayer
+            data={construction}
+            time={time}
+            hidden={constructionHidden}
+            zoom={zoom}
+            onPopup={setPopup}
+          />
+        )}
         {visible('rail') && <RailLayer network={network} onPopup={setPopup} />}
         {network.sections
           .filter((s) => visible(s.line))
