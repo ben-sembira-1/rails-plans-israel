@@ -193,6 +193,27 @@ export class Ui {
     if (!found) throw new NotApplicable('could not find the map in this version');
   }
 
+  /** Fails as n/a in versions without the city construction layers. */
+  async requireConstruction(): Promise<void> {
+    await this.openTab('trains');
+    const group = this.page.getByRole('group', { name: 'שכבות בנייה' });
+    if ((await group.count()) === 0) throw new NotApplicable('this version has no construction layers');
+  }
+
+  /** Jumps the timeline to a milestone from the side panel (e.g. "ללא מועד"). */
+  async goToMilestone(label: string): Promise<void> {
+    await this.openTab('trains');
+    await this.page.getByRole('group', { name: 'אבני דרך' }).getByRole('button', { name: label }).click();
+  }
+
+  /** Clicks the middle of the map (after `focusMap` on a feature) and waits for its popup. */
+  async clickMapCenter(popup: string): Promise<void> {
+    const box = await this.page.locator('.map').boundingBox();
+    if (!box) throw new Error('no map');
+    await this.page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await this.page.locator(popup).waitFor({ timeout: 10000 });
+  }
+
   /** Opens Google's details panel from the open place card. */
   async openDetails(): Promise<void> {
     const details = this.page.getByRole('button', { name: 'פרטים מגוגל' });
@@ -219,6 +240,36 @@ export const SCENARIOS: readonly Scenario[] = [
     id: 'works-closeup',
     title: 'Close-up: Purple Line heavy works on Allenby (zoom 16)',
     run: (ui) => ui.focusMap(32.0665, 34.7725, 16),
+  },
+  {
+    // Real Tel Aviv projects from the development sample (src/construction/sample.json) at today's step.
+    id: 'construction-layer',
+    title: 'City construction: sites with 20 m / 50 m noise zones near Allenby (zoom 17)',
+    run: async (ui) => {
+      await ui.requireConstruction();
+      await ui.closePanel();
+      await ui.focusMap(32.0645, 34.7722, 17);
+    },
+  },
+  {
+    id: 'construction-popup',
+    title: 'City construction: a site popup (Allenby 110)',
+    run: async (ui) => {
+      await ui.requireConstruction();
+      await ui.closePanel();
+      await ui.focusMap(32.06439, 34.77221, 18);
+      await ui.clickMapCenter('.project-pop');
+    },
+  },
+  {
+    id: 'construction-upcoming',
+    title: 'City construction: upcoming permits at the "no date" step (zoom 16)',
+    run: async (ui) => {
+      await ui.requireConstruction();
+      await ui.goToMilestone('ללא מועד');
+      await ui.closePanel();
+      await ui.focusMap(32.0665, 34.7725, 16);
+    },
   },
   {
     id: 'trains-tab',

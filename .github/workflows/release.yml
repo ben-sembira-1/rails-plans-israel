@@ -11,9 +11,13 @@ permissions:
   pages: write
   id-token: write
 
+# Shared with construction-data.yml, so a release and the daily data update never deploy over each other.
 concurrency:
-  group: release
+  group: pages
   cancel-in-progress: false
+
+env:
+  LIVE_DATA_URL: https://ben-sembira-1.github.io/rails-plans-israel/data/construction.json
 
 jobs:
   release:
@@ -31,6 +35,14 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      # Reuse the snapshot that is live now, so a release never calls the city APIs; only the very first deploy
+      # (no live file yet) fetches it.
+      - name: Construction snapshot
+        run: |
+          mkdir -p public/data
+          if ! curl -fsSL --retry 3 -o public/data/construction.json "$LIVE_DATA_URL"; then
+            npm run construction:fetch -- public/data/construction.json
+          fi
       - name: Build
         run: npm run build
         env:

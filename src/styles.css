@@ -1364,3 +1364,79 @@ input:focus-visible {
     width: min(420px, calc(100% - 420px));
   }
 }
+
+/* City construction projects */
+.works-build b {
+  color: #8d4a1f;
+}
+
+.build-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex: none;
+  border: 2px solid #8d4a1f;
+}
+
+.build-construction {
+  background: #a0522d;
+  box-shadow: 0 0 0 3px #e3b58c;
+}
+
+.build-permitted {
+  background: #fff;
+}
+
+.build-requested {
+  background: #fff;
+  border-width: 1px;
+  border-color: #80868b;
+}
+
+.build-road {
+  height: 4px;
+  border: 0;
+  background: repeating-linear-gradient(90deg, #00796b 0 6px, transparent 6px 10px);
+}
+
+.legend .count {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.note {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 4px 0;
+}
+
+.zone-build {
+  background: #e3b58c;
+}
+
+.zone-build i {
+  background: #a0522d;
+}
+
+.chip-construction {
+  background: #ecd3c0;
+}
+
+.chip-permitted {
+  background: #f3e7dc;
+}
+
+.chip-requested {
+  background: var(--chip);
+}
+
+.pop .pop-source {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Request types can be long: keep the popup narrow and let the title wrap. */
+.project-pop {
+  max-width: 340px;
+}

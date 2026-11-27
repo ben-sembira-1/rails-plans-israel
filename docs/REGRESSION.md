@@ -8,13 +8,17 @@ with `master` before it is marked ready for review.
 The list lives in [`regression/scenarios.ts`](../regression/scenarios.ts) and is maintained with the app: add a
 scenario when a new panel or state is added, and update the steps when the UI changes.
 
-| Scenario             | What it shows                                                       |
-| -------------------- | ------------------------------------------------------------------- |
-| `all-closed`         | Everything closed: no side panel tab open, no details panel         |
-| `trains-tab`         | Side panel open on the trains information tab                       |
-| `places-tab`         | Side panel open on the places of interest tab, with one saved place |
-| `details-panel`      | Google's place details panel open on the right, side panel closed   |
-| `places-and-details` | Places tab and the details panel open together                      |
+| Scenario                | What it shows                                                                        |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| `all-closed`            | Everything closed: no side panel tab open, no details panel                          |
+| `works-closeup`         | Close-up of the Purple Line heavy works on Allenby (zoom 16): the 20 m / 100 m zones |
+| `construction-layer`    | City construction near Allenby at zoom 17: sites with their 20 m / 50 m noise zones  |
+| `construction-popup`    | The popup of a construction site (Allenby 110)                                       |
+| `construction-upcoming` | The "no date" step: only the upcoming permits                                        |
+| `trains-tab`            | Side panel open on the trains information tab                                        |
+| `places-tab`            | Side panel open on the places of interest tab, with one saved place                  |
+| `details-panel`         | Google's place details panel open on the right, side panel closed                    |
+| `places-and-details`    | Places tab and the details panel open together                                       |
 
 Each scenario is captured in two layouts: **desktop** (1440×900) and **phone** (390×844). A scenario that an
 `master` can't show yet (a state the PR adds) is recorded as `n/a` for `master`.

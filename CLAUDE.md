@@ -3,7 +3,8 @@
 Guidance for AI agents working in this repository.
 
 - Target and requirements: [docs/TARGET.md](docs/TARGET.md). Sign-in setup: [docs/FIREBASE.md](docs/FIREBASE.md).
-  Map setup: [docs/GOOGLE_MAPS.md](docs/GOOGLE_MAPS.md).
+  Map setup: [docs/GOOGLE_MAPS.md](docs/GOOGLE_MAPS.md). City construction data (daily job, sources, mapping):
+  [docs/CONSTRUCTION.md](docs/CONSTRUCTION.md).
 - Stack: Vite + React + TypeScript (strictest settings), Google Maps via `@vis.gl/react-google-maps`, Firebase Auth +
   Firestore.
 - Data: `src/data/network.json`, validated by `src/data/schema.ts` (tests fail on invalid data). Time values are

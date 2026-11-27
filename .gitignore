@@ -10,3 +10,6 @@ coverage
 
 # Regression screenshots (npm run regression)
 regression-output
+
+# Construction snapshot (npm run construction:fetch; deployed by the daily workflow, never committed)
+public/data/construction.json
