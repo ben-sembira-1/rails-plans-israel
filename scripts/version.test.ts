@@ -1,6 +1,14 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { compareSemver, latestVersion, packageVersion, parseSemver } from './version.ts';
+import {
+  bumpSemver,
+  compareSemver,
+  isBumpLevel,
+  latestVersion,
+  packageVersion,
+  parseSemver,
+  targetVersion,
+} from './version.ts';
 
 describe('version helper', () => {
   it('parses X.Y.Z with or without a leading v', () => {
@@ -25,5 +33,31 @@ describe('version helper', () => {
 
   it('reads a valid package.json version', () => {
     expect(parseSemver(packageVersion())).not.toBeNull();
+  });
+
+  it('bumps patch, minor and major', () => {
+    expect(bumpSemver([0, 6, 1], 'patch')).toEqual([0, 6, 2]);
+    expect(bumpSemver([0, 6, 1], 'minor')).toEqual([0, 7, 0]);
+    expect(bumpSemver([0, 6, 1], 'major')).toEqual([1, 0, 0]);
+  });
+
+  it('accepts only patch, minor and major as levels', () => {
+    expect(['patch', 'minor', 'major', 'Patch', '', undefined].map(isBumpLevel)).toEqual([
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+    ]);
+  });
+
+  it('bumps from the newer of master and the latest tag', () => {
+    expect(targetVersion([0, 6, 1], [0, 6, 1], 'minor')).toEqual([0, 7, 0]);
+    // master ahead of the tag (a release still deploying): bump master's version
+    expect(targetVersion([0, 7, 0], [0, 6, 1], 'patch')).toEqual([0, 7, 1]);
+    // tag ahead of master's package.json: bump the tag
+    expect(targetVersion([0, 5, 0], [0, 6, 1], 'patch')).toEqual([0, 6, 2]);
+    expect(targetVersion(null, null, 'patch')).toEqual([0, 0, 1]);
   });
 });

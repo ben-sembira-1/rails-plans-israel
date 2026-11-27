@@ -4,6 +4,7 @@
  *
  *   npm run regression                                # working tree + baselines
  *   npm run regression -- --assets <url> --jobs 8     # PR markdown with image links under <url>; 8 parallel tabs
+ *   npm run regression -- --browser chromium          # Playwright's bundled Chromium instead of Google Chrome (CI)
  *
  * Output (git-ignored): regression-output/<version>/<scenario>-<layout>.png, manifest.json per version,
  * regression-output/compare/<scenario>-<layout>.png and regression-output/pr-regression.md.
@@ -347,7 +348,14 @@ async function main(): Promise<void> {
   );
 
   const server = await serveBuilds();
-  const browser = await chromium.launch({ channel: 'chrome', headless: true });
+  // Locally the installed Google Chrome; in CI Playwright's bundled Chromium (`--browser chromium`).
+  const browserName = arg('--browser') ?? 'chrome';
+  if (browserName !== 'chrome' && browserName !== 'chromium')
+    throw new Error('--browser must be chrome or chromium');
+  const browser = await chromium.launch({
+    headless: true,
+    ...(browserName === 'chrome' ? { channel: 'chrome' } : {}),
+  });
   try {
     const ready = todo.filter((v) => !failed.has(v.label));
     for (const v of ready) mkdirSync(join(OUT, v.label), { recursive: true });
