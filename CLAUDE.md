@@ -17,6 +17,10 @@ Guidance for AI agents working in this repository.
 - Map shapes (`Polyline`, `Circle`, …) are updated with Google's merging `setOptions`, so always pass every option
   that can change (e.g. `icons: []` for a solid line), or the old value stays. When an option is only read on
   creation, change the React `key` to recreate the shape.
+- **Tasks for the owner** (console settings, secrets/variables, publishing rules, anything you can't do yourself)
+  go on the PR as **review comment threads** on the relevant diff lines (`gh api .../pulls/<n>/reviews` with
+  `comments`), one task per thread, with the exact steps. `master` requires conversation resolution, so the PR
+  can't merge until each one is resolved. Also list them in the description's "Before merging" section.
 - **PRs open as drafts.** Before marking one ready, run the regression (`npm run regression`, see
   [docs/REGRESSION.md](docs/REGRESSION.md)): every scenario in `regression/scenarios.ts`, in a desktop and a phone
   layout, compared with `master`.
