@@ -1,3 +1,5 @@
+import { ConstructionLegend, type ConstructionPanelInfo } from '../construction/ConstructionLegend.tsx';
+import { constructionSummary } from '../construction/summary.ts';
 import type { Section, Site } from '../data/schema.ts';
 import { eventLabel, MILESTONES, milestoneAt } from '../domain/events.ts';
 import type { LayerId } from '../domain/lines.ts';
@@ -18,6 +20,8 @@ export interface SidePanelProps {
   readonly hidden: ReadonlySet<LayerId>;
   readonly onTimeChange: (t: number) => void;
   readonly onToggleLayer: (id: LayerId, visible: boolean) => void;
+  /** City construction projects (status line, layer toggles); without it they are not mentioned. */
+  readonly construction?: ConstructionPanelInfo;
   /** The places-of-interest tab; without it the panel shows only the trains information. */
   readonly places?: { readonly count: number; readonly content: React.ReactNode };
 }
@@ -59,6 +63,7 @@ export function SidePanel({
   hidden,
   onTimeChange,
   onToggleLayer,
+  construction,
   places,
 }: SidePanelProps) {
   const milestone = milestoneAt(time);
@@ -98,6 +103,11 @@ export function SidePanel({
               {milestone && <p className="milestone-text">{milestone.description}</p>}
               <WorksList title="עבודות כבדות" names={works.major} kind="major" />
               <WorksList title="עבודות קלות" names={works.minor} kind="minor" />
+              {construction?.counts && (
+                <div className="works works-build">
+                  <b>בנייה בעיר:</b> {constructionSummary(construction.counts)}
+                </div>
+              )}
             </div>
           </PanelSection>
 
@@ -146,6 +156,12 @@ export function SidePanel({
             <Legend hidden={hidden} onToggle={onToggleLayer} />
           </PanelSection>
 
+          {construction && (
+            <PanelSection title="בנייה ועבודות בעיר">
+              <ConstructionLegend {...construction} />
+            </PanelSection>
+          )}
+
           <PanelSection title="איך לקרוא את המפה">
             <ul className="docs">
               <li>
@@ -167,6 +183,15 @@ export function SidePanel({
                 </span>{' '}
                 עבודות קלות. רצועה כהה: עד 20 מ׳ מהקו (פגיעה חזקה); בהירה: 20–100 מ׳.
               </li>
+              {construction && (
+                <li>
+                  <span className="zone zone-build">
+                    <i />
+                  </span>{' '}
+                  אתר בנייה פעיל: רצועה כהה עד 20 מ׳ מהאתר (רעש חזק); בהירה: 20–50 מ׳ (רעש חלש). בזום רחוק כל
+                  פרויקט הוא נקודה. מועדי סיום שלא פורסמו מוערכים (שלוש שנים לבניין חדש, שנתיים לתוספת).
+                </li>
+              )}
               <li>לחיצה על קטע מציגה את כל שלביו; לחיצה על תחנה מציגה את מועד הפתיחה.</li>
               <li>שמות התחנות מופיעים בזום קרוב. קווי המטרו משורטטים בקו ישר בין תחנות.</li>
               <li>
@@ -175,7 +200,8 @@ export function SidePanel({
               </li>
             </ul>
             <p className="sources">
-              מקורות: מינהל התכנון (שכבות תמ״א 70 ו״חצב״), נת״ע, ויקיפדיה, OpenStreetMap.
+              מקורות: מינהל התכנון (שכבות תמ״א 70 ו״חצב״), נת״ע, ויקיפדיה, OpenStreetMap
+              {construction ? '; בנייה ועבודות: מערכת ה־GIS של עיריית תל אביב–יפו, מתעדכן מדי יום' : ''}.
             </p>
           </PanelSection>
         </div>

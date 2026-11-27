@@ -2,9 +2,16 @@ import { APIProvider, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { MapView } from './components/MapView.tsx';
 import { SidePanel, type PanelTab } from './components/SidePanel.tsx';
+import { useConstruction, type ConstructionState } from './construction/useConstruction.ts';
 import { TimelineBar } from './components/TimelineBar.tsx';
 import { TopBar } from './components/TopBar.tsx';
 import type { Network } from './data/schema.ts';
+import {
+  CONSTRUCTION_HIDDEN_BY_DEFAULT,
+  countsAt,
+  projectsAt,
+  type ConstructionLayer,
+} from './domain/construction.ts';
 import { worksEvents } from './domain/events.ts';
 import type { LayerId } from './domain/lines.ts';
 import { markersFor } from './domain/markers.ts';
@@ -32,6 +39,8 @@ export interface AppProps {
   readonly headerActions?: React.ReactNode;
   /** A page shown instead of the map (e.g. the admin center); the timeline position is kept. */
   readonly page?: React.ReactNode;
+  /** Overrides the construction snapshot (tests); by default it is loaded from the site. */
+  readonly construction?: ConstructionState;
 }
 
 interface Details {
@@ -53,6 +62,8 @@ function MapArea({
   network,
   time,
   hidden,
+  construction,
+  constructionHidden,
   mapId,
   store,
   places,
@@ -66,6 +77,8 @@ function MapArea({
   network: Network;
   time: number;
   hidden: ReadonlySet<LayerId>;
+  construction: ConstructionState;
+  constructionHidden: ReadonlySet<ConstructionLayer>;
   mapId: string;
   store: PlacesStore | null;
   places: readonly SavedPlace[];
@@ -92,6 +105,8 @@ function MapArea({
         network={network}
         time={time}
         hidden={hidden}
+        construction={construction.status === 'ready' ? construction.data : null}
+        constructionHidden={constructionHidden}
         mapId={mapId}
         {...(store && placesLib
           ? {
@@ -140,6 +155,7 @@ export function App({
   onTimeChange,
   headerActions,
   page,
+  construction: constructionOverride,
 }: AppProps) {
   const [time, setTime] = useState(() => STEPS[nearestStepIndex(initialTime ?? TODAY)] ?? TODAY);
   const [hidden, setHidden] = useState<ReadonlySet<LayerId>>(new Set());
@@ -152,6 +168,24 @@ export function App({
   const panelId = useId();
   const events = useMemo(() => worksEvents(network.sections, network.sites), [network]);
   const markers = useMemo(() => markersFor(events), [events]);
+
+  const loaded = useConstruction(constructionOverride === undefined);
+  const construction = constructionOverride ?? loaded;
+  const [constructionHidden, setConstructionHidden] = useState<ReadonlySet<ConstructionLayer>>(
+    () => new Set(CONSTRUCTION_HIDDEN_BY_DEFAULT),
+  );
+  const constructionCounts = useMemo(
+    () => (construction.status === 'ready' ? countsAt(projectsAt(construction.data, time)) : null),
+    [construction, time],
+  );
+  const toggleConstruction = useCallback((layer: ConstructionLayer, visible: boolean) => {
+    setConstructionHidden((h) => {
+      const next = new Set(h);
+      if (visible) next.delete(layer);
+      else next.add(layer);
+      return next;
+    });
+  }, []);
 
   const places = usePlaces(store);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -239,6 +273,12 @@ export function App({
               hidden={hidden}
               onTimeChange={setTime}
               onToggleLayer={toggleLayer}
+              construction={{
+                state: construction,
+                counts: constructionCounts,
+                hidden: constructionHidden,
+                onToggle: toggleConstruction,
+              }}
               {...(store
                 ? {
                     places: {
@@ -266,6 +306,8 @@ export function App({
                 network={network}
                 time={time}
                 hidden={hidden}
+                construction={construction}
+                constructionHidden={constructionHidden}
                 mapId={maps.mapId}
                 store={store}
                 places={places.items}

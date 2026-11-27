@@ -65,3 +65,24 @@ export function bufferRings(path: readonly LatLng[], meters: number): LatLng[][]
   }
   return rings.map((r) => (area(r) < 0 ? [...r].reverse() : r).map(toLatLng));
 }
+
+/** The same ring, wound counter-clockwise (x = lng, y = lat). */
+export function ccw(ring: readonly LatLng[]): LatLng[] {
+  let a = 0;
+  for (let i = 0; i < ring.length; i++) {
+    const p = ring[i];
+    const q = ring[(i + 1) % ring.length];
+    if (p && q) a += p[1] * q[0] - q[1] * p[0];
+  }
+  return a < 0 ? [...ring].reverse() : [...ring];
+}
+
+/**
+ * The area within `meters` of a closed outline (inside included), as rings to draw together as one polygon: the
+ * outline itself plus the buffer of its edges, all counter-clockwise so the union fills evenly.
+ */
+export function areaBufferRings(ring: readonly LatLng[], meters: number): LatLng[][] {
+  const first = ring[0];
+  if (!first || ring.length < 3) return [];
+  return [ccw(ring), ...bufferRings([...ring, first], meters)];
+}

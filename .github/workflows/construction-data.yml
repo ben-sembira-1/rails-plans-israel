@@ -1,0 +1,64 @@
+name: Construction data
+
+# Once a day: fetch the city construction snapshot (the only thing that calls the city APIs), then rebuild the site
+# from master with it and deploy GitHub Pages. The data is never committed. See docs/CONSTRUCTION.md.
+on:
+  schedule:
+    - cron: '30 0 * * *' # about 03:30 in Israel
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Shared with release.yml, so a release and the daily update never deploy over each other.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  LIVE_DATA_URL: https://ben-sembira-1.github.io/rails-plans-israel/data/construction.json
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Fails (and nothing is deployed) when a source is empty or shrank to less than half of the live snapshot.
+      - name: Fetch the construction snapshot
+        run: npm run construction:fetch -- public/data/construction.json --previous "$LIVE_DATA_URL"
+      - name: Build
+        run: npm run build
+        env:
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
+          VITE_GOOGLE_MAPS_API_KEY: ${{ vars.VITE_GOOGLE_MAPS_API_KEY }}
+          VITE_GOOGLE_MAP_ID: ${{ vars.VITE_GOOGLE_MAP_ID }}
+      - uses: actions/configure-pages@v6
+        if: github.ref == 'refs/heads/master'
+      - uses: actions/upload-pages-artifact@v5
+        if: github.ref == 'refs/heads/master'
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    # A manual run on another branch only checks the fetch; only master is deployed.
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

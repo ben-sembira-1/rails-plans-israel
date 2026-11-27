@@ -1,0 +1,63 @@
+{
+  "features": [
+    {
+      "properties": {
+        "GlobalID": "{C286C66C-83E1-4BD2-8C74-154500A1C31D}",
+        "t_ktovet": "עקיבא אריה 9",
+        "mahut_avoda": "עבודת מנוף",
+        "tzimtzum_netivim": "חסימה הרמטית",
+        "sivug_yom_layla": "עבודות יום",
+        "date_start": "09/07/2024",
+        "date_end": "09/09/2027",
+        "kishur_kovets": ""
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [34.791005, 32.087559],
+          [34.79153, 32.088093]
+        ]
+      }
+    },
+    {
+      "properties": {
+        "GlobalID": "{25FAD5A8-867D-4871-982A-EE6BAB8400D3}",
+        "t_ktovet": "רחוב תדהר דוד",
+        "mahut_avoda": "חידוש מלא של הרחוב",
+        "tzimtzum_netivim": "אחר",
+        "sivug_yom_layla": "עבודות יום",
+        "date_start": "04/05/2025",
+        "date_end": "14/04/2027",
+        "kishur_kovets": "https://tlv.sharepoint.com/sites/itworkers/GISDocs/GIS_PORTAL_ATTACHED_LINKS/mashlat_tenua/דוד תדהר  אפריל 25.pdf"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [34.786408, 32.054046],
+          [34.786258, 32.05349],
+          [34.786681, 32.053083],
+          [34.785751, 32.050503]
+        ]
+      }
+    },
+    {
+      "properties": {
+        "GlobalID": "{F332499C-032B-469D-8659-CA8BEF79E932}",
+        "t_ktovet": "כיכר התרבות (הבימה)",
+        "mahut_avoda": "יריד חנוכה",
+        "tzimtzum_netivim": null,
+        "sivug_yom_layla": "אירוע תרבות",
+        "date_start": "10/12/2026",
+        "date_end": "13/12/2026",
+        "kishur_kovets": ""
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [34.779669, 32.072045],
+          [34.779951, 32.072915]
+        ]
+      }
+    }
+  ]
+}
