@@ -56,6 +56,8 @@ capture it again.
 4. Write the PR description in this order:
    1. text: what and why;
    2. **big images of the features the PR adds** (desktop and phone);
-   3. the **Regression** section from `pr-regression.md`, with the evaluation filled in: that the images were
-      evaluated and compared with `master` (with its commit), and every difference found (intended or not).
+   3. the **Regression** section from `pr-regression.md`. It starts with **one bullet list of every difference
+      from `master`** (name the commit), each saying why it is OK and expected; then the statement that the images
+      were evaluated against `master`; then the small images. A difference that is not OK is fixed before the PR is
+      marked ready, not listed.
 5. Only then mark the PR **ready for review**.

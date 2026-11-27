@@ -275,9 +275,11 @@ function prMarkdown(assets: string, versions: readonly Version[], current: Manif
   return [
     '## Regression',
     '',
-    `Compared with ${baselines.join(', ')}.`,
+    `**Differences from ${baselines.join(', ')}. Each one is expected, for the reason given:**`,
     '',
-    '<!-- EVALUATION: Claude writes its evaluation here before marking the PR ready. -->',
+    '- <!-- every difference, in one list: what changed (scenario, layout) and why it is OK and expected -->',
+    '',
+    `Claude evaluated all regression images and comparison sheets against ${baselines.join(', ')}.`,
     '',
     '| Scenario | Desktop | Phone |',
     '| --- | --- | --- |',

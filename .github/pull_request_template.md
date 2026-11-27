@@ -8,6 +8,9 @@
 
 ## Regression
 
-<!-- 3. Paste regression-output/pr-regression.md and fill in the evaluation:
-     - "Claude evaluated the regression images and compared them with master @ <commit>."
-     - every difference found per scenario and layout, and whether it is intended -->
+**Differences from `master @ <commit>`. Each one is expected, for the reason given:**
+
+- <!-- every difference, in one list: what changed (scenario, layout) and why it is OK and expected -->
+
+<!-- 3. Then: "Claude evaluated all regression images and comparison sheets against master @ <commit>.",
+     then paste the image table from regression-output/pr-regression.md -->
