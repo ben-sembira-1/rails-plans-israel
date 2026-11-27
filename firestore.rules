@@ -5,6 +5,8 @@ rules_version = '2';
 // - Admins are the emails listed in config/access.adminEmails (edited in the Firebase console only).
 // - Only admins can approve, revoke or delete users.
 // - Approved users can only change their own timelinePosition.
+// - Approved users keep their own places of interest and comments under users/{uid}/places; nobody else
+//   (admins included) can read them.
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
@@ -21,6 +23,12 @@ service cloud.firestore {
     match /config/access {
       allow read: if isAdmin();
       allow write: if false;
+    }
+
+    function isApprovedOwner(uid) {
+      return signedIn()
+        && request.auth.uid == uid
+        && get(/databases/$(database)/documents/users/$(uid)).data.approved == true;
     }
 
     match /users/{uid} {
@@ -42,6 +50,33 @@ service cloud.firestore {
           && request.resource.data.timelinePosition is number);
 
       allow delete: if isAdmin();
+
+      match /places/{placeId} {
+        allow read, delete: if isApprovedOwner(uid);
+        allow create: if isApprovedOwner(uid)
+          && request.resource.data.keys().hasOnly(['googlePlaceId', 'name', 'address', 'lat', 'lng', 'createdAt'])
+          && request.resource.data.googlePlaceId is string
+          && request.resource.data.googlePlaceId.size() <= 512
+          && request.resource.data.name is string
+          && request.resource.data.name.size() <= 300
+          && request.resource.data.address is string
+          && request.resource.data.address.size() <= 500
+          && request.resource.data.lat is number
+          && request.resource.data.lng is number
+          && request.resource.data.createdAt == request.time;
+        allow update: if false;
+
+        match /comments/{commentId} {
+          allow read, delete: if isApprovedOwner(uid);
+          allow create: if isApprovedOwner(uid)
+            && request.resource.data.keys().hasOnly(['text', 'createdAt'])
+            && request.resource.data.text is string
+            && request.resource.data.text.size() > 0
+            && request.resource.data.text.size() <= 2000
+            && request.resource.data.createdAt == request.time;
+          allow update: if false;
+        }
+      }
     }
   }
 }
