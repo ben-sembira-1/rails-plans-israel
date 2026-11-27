@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { Section, Site } from '../data/schema.ts';
 import { eventLabel, MILESTONES, milestoneAt } from '../domain/events.ts';
 import type { LayerId } from '../domain/lines.ts';
@@ -8,8 +7,10 @@ import { Legend } from './Legend.tsx';
 
 export interface SidePanelProps {
   readonly id: string;
-  /** Phone only: the panel is hidden unless open. On desktop it is always shown. */
-  readonly open: boolean;
+  /** The open tab, or `null` when the panel is closed (only the tab headers show on desktop). */
+  readonly tab: PanelTab | null;
+  /** Clicking the open tab's header closes the panel. */
+  readonly onTab: (tab: PanelTab | null) => void;
   readonly time: number;
   readonly events: readonly number[];
   readonly sections: readonly Section[];
@@ -21,7 +22,7 @@ export interface SidePanelProps {
   readonly places?: { readonly count: number; readonly content: React.ReactNode };
 }
 
-type Tab = 'trains' | 'places';
+export type PanelTab = 'trains' | 'places';
 
 /** "הסגול – אלנבי" -> "הסגול: אלנבי", to keep the works lists short. */
 function shortName(name: string): string {
@@ -49,7 +50,8 @@ function PanelSection({ title, children }: { title: string; children: React.Reac
 /** All the controls and the documentation: current status, events, layers and how to read the map. */
 export function SidePanel({
   id,
-  open,
+  tab,
+  onTab,
   time,
   events,
   sections,
@@ -59,12 +61,11 @@ export function SidePanel({
   onToggleLayer,
   places,
 }: SidePanelProps) {
-  const [tab, setTab] = useState<Tab>('trains');
   const milestone = milestoneAt(time);
   const works = worksAt(sections, sites, time);
-  const shown: Tab = places ? tab : 'trains';
+  const shown: PanelTab | null = tab === 'places' && !places ? 'trains' : tab;
 
-  const tabButton = (value: Tab, label: string) => (
+  const tabButton = (value: PanelTab, label: string) => (
     <button
       type="button"
       role="tab"
@@ -73,7 +74,7 @@ export function SidePanel({
       aria-controls={`${id}-${value}`}
       className={shown === value ? 'tab on' : 'tab'}
       onClick={() => {
-        setTab(value);
+        onTab(shown === value ? null : value);
       }}
     >
       {label}
@@ -81,14 +82,12 @@ export function SidePanel({
   );
 
   return (
-    <aside id={id} className={open ? 'side-panel open' : 'side-panel'} aria-label="לוח בקרה">
-      {places && (
-        <div className="tabs" role="tablist" aria-label="תוכן הלוח">
-          {tabButton('trains', 'מידע על הרכבות')}
-          {tabButton('places', `מקומות מעניינים (${String(places.count)})`)}
-        </div>
-      )}
-      {shown === 'places' && places ? (
+    <aside id={id} className={shown ? 'side-panel open' : 'side-panel'} aria-label="לוח בקרה">
+      <div className="tabs" role="tablist" aria-label="תוכן הלוח">
+        {tabButton('trains', 'מידע על הרכבות')}
+        {places && tabButton('places', `מקומות מעניינים (${String(places.count)})`)}
+      </div>
+      {shown === null ? null : shown === 'places' && places ? (
         <div role="tabpanel" id={`${id}-places`} aria-labelledby={`${id}-tab-places`}>
           {places.content}
         </div>

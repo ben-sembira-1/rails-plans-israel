@@ -1,7 +1,7 @@
 import { APIProvider, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { MapView } from './components/MapView.tsx';
-import { SidePanel } from './components/SidePanel.tsx';
+import { SidePanel, type PanelTab } from './components/SidePanel.tsx';
 import { TimelineBar } from './components/TimelineBar.tsx';
 import { TopBar } from './components/TopBar.tsx';
 import type { Network } from './data/schema.ts';
@@ -37,6 +37,11 @@ export interface AppProps {
 interface Details {
   readonly googlePlaceId: string;
   readonly name: string;
+}
+
+/** Narrow screens (phones) start with the side panel closed; it opens over the map. */
+function isNarrow(): boolean {
+  return typeof window.matchMedia === 'function' && window.matchMedia('(width <= 800px)').matches;
 }
 
 function errorText(e: unknown): string {
@@ -138,7 +143,12 @@ export function App({
 }: AppProps) {
   const [time, setTime] = useState(() => STEPS[nearestStepIndex(initialTime ?? TODAY)] ?? TODAY);
   const [hidden, setHidden] = useState<ReadonlySet<LayerId>>(new Set());
-  const [panelOpen, setPanelOpen] = useState(false);
+  const [tab, setTab] = useState<PanelTab | null>(() => (isNarrow() ? null : 'trains'));
+  const [lastTab, setLastTab] = useState<PanelTab>('trains');
+  const openTab = useCallback((t: PanelTab | null) => {
+    setTab(t);
+    if (t !== null) setLastTab(t);
+  }, []);
   const panelId = useId();
   const events = useMemo(() => worksEvents(network.sections, network.sites), [network]);
   const markers = useMemo(() => markersFor(events), [events]);
@@ -206,21 +216,22 @@ export function App({
     <div className="app" dir="rtl">
       <TopBar time={time} actions={headerActions} />
       {page ?? (
-        <div className="workspace">
+        <div className={tab === null ? 'workspace panel-closed' : 'workspace'}>
           <div className="side-column">
             <TimelineBar
               time={time}
               markers={markers}
               onTimeChange={setTime}
-              panelOpen={panelOpen}
+              panelOpen={tab !== null}
               panelId={panelId}
               onTogglePanel={() => {
-                setPanelOpen((o) => !o);
+                openTab(tab === null ? lastTab : null);
               }}
             />
             <SidePanel
               id={panelId}
-              open={panelOpen}
+              tab={tab}
+              onTab={openTab}
               time={time}
               events={events}
               sections={network.sections}
@@ -239,7 +250,8 @@ export function App({
                           selectedId={selectedId}
                           onSelect={(id) => {
                             select(id);
-                            setPanelOpen(false);
+                            // On a phone the panel covers the map; close it to show the place.
+                            if (isNarrow()) openTab(null);
                           }}
                         />
                       ),

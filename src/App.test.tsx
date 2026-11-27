@@ -143,16 +143,40 @@ describe('App', () => {
     expect(today).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('opens and closes the side panel (phone layout)', async () => {
-    render(<App network={NETWORK} maps={MAPS} />);
-    const toggle = screen.getByRole('button', { name: /מקרא ואירועים/ });
+  it('starts closed on a phone and opens from the toggle', async () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('800px') }));
+    try {
+      render(<App network={NETWORK} maps={MAPS} />);
+      const toggle = screen.getByRole('button', { name: /מקרא ואירועים/ });
+      const panel = screen.getByRole('complementary', { name: 'לוח בקרה' });
+      expect(toggle).toHaveAttribute('aria-expanded', 'false');
+      expect(toggle).toHaveAttribute('aria-controls', panel.id);
+      expect(panel).not.toHaveClass('open');
+      await userEvent.click(toggle);
+      expect(toggle).toHaveAttribute('aria-expanded', 'true');
+      expect(panel).toHaveClass('open');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('closes the panel when the open tab is clicked, and reopens it', async () => {
+    const store = createMemoryStore();
+    const { container } = render(<App network={NETWORK} maps={MAPS} places={store} />);
     const panel = screen.getByRole('complementary', { name: 'לוח בקרה' });
-    expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(toggle).toHaveAttribute('aria-controls', panel.id);
+    const trains = screen.getByRole('tab', { name: 'מידע על הרכבות' });
+    expect(trains).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('group', { name: 'אבני דרך' })).toBeInTheDocument();
+
+    await userEvent.click(trains);
     expect(panel).not.toHaveClass('open');
-    await userEvent.click(toggle);
-    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(container.querySelector('.workspace')).toHaveClass('panel-closed');
+    expect(screen.queryByRole('group', { name: 'אבני דרך' })).toBeNull();
+    expect(screen.getAllByRole('tab').every((t) => t.getAttribute('aria-selected') === 'false')).toBe(true);
+
+    await userEvent.click(screen.getByRole('tab', { name: 'מקומות מעניינים (0)' }));
     expect(panel).toHaveClass('open');
+    expect(screen.getByRole('region', { name: 'מקומות מעניינים' })).toBeInTheDocument();
   });
 
   it('keeps previous and next together, before the bar', () => {
@@ -231,7 +255,7 @@ describe('App', () => {
 
   it('hides the places features without a store', () => {
     render(<App network={NETWORK} maps={MAPS} />);
-    expect(screen.queryByRole('tab')).toBeNull();
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['מידע על הרכבות']);
     expect(screen.queryByRole('button', { name: 'search result' })).toBeNull();
   });
 });

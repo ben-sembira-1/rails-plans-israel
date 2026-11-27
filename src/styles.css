@@ -1333,3 +1333,22 @@ input:focus-visible {
     transform: none;
   }
 }
+
+/* Desktop with the side panel closed (click the open tab): the timeline and tab headers float over a full-width map. */
+@media (width > 800px) {
+  .workspace.panel-closed .side-column {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 380px;
+    border-right: none;
+    border-bottom-right-radius: 14px;
+    box-shadow: 0 6px 24px rgb(11 21 48 / 18%);
+  }
+
+  .workspace.panel-closed .side-panel {
+    flex: none;
+    overflow: visible;
+    padding-bottom: 10px;
+    border-bottom-right-radius: 14px;
+  }
+}
