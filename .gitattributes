@@ -1,4 +1,0 @@
-* text=auto eol=lf
-
-# Original reference documents are stored with Git LFS.
-references/raw/** filter=lfs diff=lfs merge=lfs -text
