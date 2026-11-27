@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Section, Site } from '../data/schema.ts';
 import { eventLabel, MILESTONES, milestoneAt } from '../domain/events.ts';
 import type { LayerId } from '../domain/lines.ts';
@@ -16,7 +17,11 @@ export interface SidePanelProps {
   readonly hidden: ReadonlySet<LayerId>;
   readonly onTimeChange: (t: number) => void;
   readonly onToggleLayer: (id: LayerId, visible: boolean) => void;
+  /** The places-of-interest tab; without it the panel shows only the trains information. */
+  readonly places?: { readonly count: number; readonly content: React.ReactNode };
 }
+
+type Tab = 'trains' | 'places';
 
 /** "הסגול – אלנבי" -> "הסגול: אלנבי", to keep the works lists short. */
 function shortName(name: string): string {
@@ -52,92 +57,130 @@ export function SidePanel({
   hidden,
   onTimeChange,
   onToggleLayer,
+  places,
 }: SidePanelProps) {
+  const [tab, setTab] = useState<Tab>('trains');
   const milestone = milestoneAt(time);
   const works = worksAt(sections, sites, time);
+  const shown: Tab = places ? tab : 'trains';
+
+  const tabButton = (value: Tab, label: string) => (
+    <button
+      type="button"
+      role="tab"
+      id={`${id}-tab-${value}`}
+      aria-selected={shown === value}
+      aria-controls={`${id}-${value}`}
+      className={shown === value ? 'tab on' : 'tab'}
+      onClick={() => {
+        setTab(value);
+      }}
+    >
+      {label}
+    </button>
+  );
 
   return (
     <aside id={id} className={open ? 'side-panel open' : 'side-panel'} aria-label="לוח בקרה">
-      <PanelSection title={`המצב ב־${formatTime(time)}`}>
-        <div className="summary">
-          {milestone && <p className="milestone-text">{milestone.description}</p>}
-          <WorksList title="עבודות כבדות" names={works.major} kind="major" />
-          <WorksList title="עבודות קלות" names={works.minor} kind="minor" />
+      {places && (
+        <div className="tabs" role="tablist" aria-label="תוכן הלוח">
+          {tabButton('trains', 'מידע על הרכבות')}
+          {tabButton('places', `מקומות מעניינים (${String(places.count)})`)}
         </div>
-      </PanelSection>
-
-      <PanelSection title="אבני דרך">
-        <div className="milestones" role="group" aria-label="אבני דרך">
-          {MILESTONES.map((m) => (
-            <button
-              type="button"
-              key={m.time}
-              className={m.time === time ? 'on' : undefined}
-              aria-pressed={m.time === time}
-              onClick={() => {
-                onTimeChange(m.time);
-              }}
-            >
-              <span dir="auto">{m.label}</span>
-            </button>
-          ))}
+      )}
+      {shown === 'places' && places ? (
+        <div role="tabpanel" id={`${id}-places`} aria-labelledby={`${id}-tab-places`}>
+          {places.content}
         </div>
-      </PanelSection>
+      ) : (
+        <div role="tabpanel" id={`${id}-trains`} aria-labelledby={`${id}-tab-trains`}>
+          <PanelSection title={`המצב ב־${formatTime(time)}`}>
+            <div className="summary">
+              {milestone && <p className="milestone-text">{milestone.description}</p>}
+              <WorksList title="עבודות כבדות" names={works.major} kind="major" />
+              <WorksList title="עבודות קלות" names={works.minor} kind="minor" />
+            </div>
+          </PanelSection>
 
-      <PanelSection title="שינויי מצב עבודות">
-        <div className="events" role="group" aria-label="שינויי מצב עבודות">
-          {events.map((t) => {
-            const classes = [t === time ? 'on' : '', t === TODAY ? 'today' : ''].filter(Boolean).join(' ');
-            return (
-              <button
-                type="button"
-                key={t}
-                className={classes || undefined}
-                aria-pressed={t === time}
-                onClick={() => {
-                  onTimeChange(t);
-                }}
-              >
-                <b dir="ltr">{formatTime(t)}</b> {eventLabel(t)}
-              </button>
-            );
-          })}
+          <PanelSection title="אבני דרך">
+            <div className="milestones" role="group" aria-label="אבני דרך">
+              {MILESTONES.map((m) => (
+                <button
+                  type="button"
+                  key={m.time}
+                  className={m.time === time ? 'on' : undefined}
+                  aria-pressed={m.time === time}
+                  onClick={() => {
+                    onTimeChange(m.time);
+                  }}
+                >
+                  <span dir="auto">{m.label}</span>
+                </button>
+              ))}
+            </div>
+          </PanelSection>
+
+          <PanelSection title="שינויי מצב עבודות">
+            <div className="events" role="group" aria-label="שינויי מצב עבודות">
+              {events.map((t) => {
+                const classes = [t === time ? 'on' : '', t === TODAY ? 'today' : '']
+                  .filter(Boolean)
+                  .join(' ');
+                return (
+                  <button
+                    type="button"
+                    key={t}
+                    className={classes || undefined}
+                    aria-pressed={t === time}
+                    onClick={() => {
+                      onTimeChange(t);
+                    }}
+                  >
+                    <b dir="ltr">{formatTime(t)}</b> {eventLabel(t)}
+                  </button>
+                );
+              })}
+            </div>
+          </PanelSection>
+
+          <PanelSection title="שכבות">
+            <Legend hidden={hidden} onToggle={onToggleLayer} />
+          </PanelSection>
+
+          <PanelSection title="איך לקרוא את המפה">
+            <ul className="docs">
+              <li>
+                <span className="line-sample solid" /> קו מלא – פועל.
+              </li>
+              <li>
+                <span className="line-sample dashed" /> קו מקווקו עם רצועה – בעבודות.
+              </li>
+              <li>
+                <span className="line-sample dotted" /> קו מנוקד – בתכנון.
+              </li>
+              <li>
+                <span className="zone zone-major">
+                  <i />
+                </span>{' '}
+                עבודות כבדות ·{' '}
+                <span className="zone zone-minor">
+                  <i />
+                </span>{' '}
+                עבודות קלות. רצועה כהה: עד 20 מ׳ מהקו (פגיעה חזקה); בהירה: 20–100 מ׳.
+              </li>
+              <li>לחיצה על קטע מציגה את כל שלביו; לחיצה על תחנה מציגה את מועד הפתיחה.</li>
+              <li>שמות התחנות מופיעים בזום קרוב. קווי המטרו משורטטים בקו ישר בין תחנות.</li>
+              <li>
+                הציר מתקדם ברבעונים עד 2029 ובשנים מ־2030; מצב העבודות לפי הלו״ז שפורסם, ואחרי 2030 בדיוק של
+                שנה.
+              </li>
+            </ul>
+            <p className="sources">
+              מקורות: מינהל התכנון (שכבות תמ״א 70 ו״חצב״), נת״ע, ויקיפדיה, OpenStreetMap.
+            </p>
+          </PanelSection>
         </div>
-      </PanelSection>
-
-      <PanelSection title="שכבות">
-        <Legend hidden={hidden} onToggle={onToggleLayer} />
-      </PanelSection>
-
-      <PanelSection title="איך לקרוא את המפה">
-        <ul className="docs">
-          <li>
-            <span className="line-sample solid" /> קו מלא – פועל.
-          </li>
-          <li>
-            <span className="line-sample dashed" /> קו מקווקו עם רצועה – בעבודות.
-          </li>
-          <li>
-            <span className="line-sample dotted" /> קו מנוקד – בתכנון.
-          </li>
-          <li>
-            <span className="zone zone-major">
-              <i />
-            </span>{' '}
-            עבודות כבדות ·{' '}
-            <span className="zone zone-minor">
-              <i />
-            </span>{' '}
-            עבודות קלות. רצועה כהה: עד 20 מ׳ מהקו (פגיעה חזקה); בהירה: 20–100 מ׳.
-          </li>
-          <li>לחיצה על קטע מציגה את כל שלביו; לחיצה על תחנה מציגה את מועד הפתיחה.</li>
-          <li>שמות התחנות מופיעים בזום קרוב. קווי המטרו משורטטים בקו ישר בין תחנות.</li>
-          <li>
-            הציר מתקדם ברבעונים עד 2029 ובשנים מ־2030; מצב העבודות לפי הלו״ז שפורסם, ואחרי 2030 בדיוק של שנה.
-          </li>
-        </ul>
-        <p className="sources">מקורות: מינהל התכנון (שכבות תמ״א 70 ו״חצב״), נת״ע, ויקיפדיה, OpenStreetMap.</p>
-      </PanelSection>
+      )}
     </aside>
   );
 }

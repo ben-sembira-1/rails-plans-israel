@@ -1100,3 +1100,236 @@ input:focus-visible {
     align-items: stretch;
   }
 }
+
+/* Side panel tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin: 8px 0 4px;
+  padding: 3px;
+  background: #eef1f6;
+  border-radius: 12px;
+}
+
+.tab {
+  flex: 1;
+  font:
+    600 13px Heebo,
+    Arial,
+    sans-serif;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 9px;
+  padding: 7px 8px;
+  cursor: pointer;
+}
+
+.tab.on {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 1px 4px rgb(11 21 48 / 12%);
+}
+
+/* Places of interest */
+.map-search {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(420px, calc(100% - 120px));
+  z-index: 5;
+}
+
+.place-search gmp-place-autocomplete {
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgb(0 0 0 / 22%);
+  color-scheme: light;
+}
+
+.search-error {
+  margin-top: 6px;
+  background: #fff;
+  color: #b3261e;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
+}
+
+.place-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+  font:
+    13px Heebo,
+    Arial,
+    sans-serif;
+  text-align: right;
+}
+
+.place-card > b {
+  font-size: 15px;
+}
+
+.place-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.comments {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.comments li {
+  background: #f5f7fb;
+  border-radius: 8px;
+  padding: 6px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+
+.comment-text {
+  flex-basis: 100%;
+  white-space: pre-wrap;
+}
+
+.link-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  color: #b3261e;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  margin-inline-start: auto;
+}
+
+.comment-form {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.comment-form textarea {
+  flex: 1;
+  font:
+    13px Heebo,
+    Arial,
+    sans-serif;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  resize: vertical;
+}
+
+.places-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.place-item {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: right;
+  font:
+    13px Heebo,
+    Arial,
+    sans-serif;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 10px;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.place-item.on {
+  border-color: #7b2ff7;
+  box-shadow: 0 0 0 2px rgb(123 47 247 / 20%);
+}
+
+.place-pin {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #7b2ff7;
+  color: #fff;
+  font-size: 13px;
+}
+
+.place-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Google's place details, on the right of the map */
+.details-panel {
+  flex: none;
+  width: 380px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #fff;
+  border-left: 1px solid #e3e7ef;
+  z-index: 1050;
+}
+
+.details-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e3e7ef;
+}
+
+.details-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.details-body gmp-place-details {
+  width: 100%;
+  color-scheme: light;
+}
+
+@media (width <= 800px) {
+  .details-panel {
+    position: absolute;
+    inset: 0;
+    width: auto;
+    border-left: none;
+    z-index: 1060;
+  }
+
+  .map-search {
+    width: calc(100% - 70px);
+    left: auto;
+    right: 10px;
+    transform: none;
+  }
+}

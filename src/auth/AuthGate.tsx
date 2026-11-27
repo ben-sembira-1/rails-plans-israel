@@ -1,10 +1,11 @@
 import { GoogleAuthProvider, signInWithCredential, signInWithPopup, signOut } from 'firebase/auth';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { App } from '../App.tsx';
 import { Logo } from '../components/Logo.tsx';
 import { APP_NAME } from '../components/TopBar.tsx';
 import type { Network } from '../data/schema.ts';
 import type { MapsConfig } from '../map/config.ts';
+import { createFirestoreStore } from '../places/firestoreStore.ts';
 import { AdminCenter } from './AdminPanel.tsx';
 import { useAllUsers } from './useAllUsers.ts';
 import type { FirebaseServices } from './firebase.ts';
@@ -117,6 +118,7 @@ function SignedInApp({
   onSignOut: () => void;
 }) {
   const save = useSavePosition(fb, access.user.uid);
+  const places = useMemo(() => createFirestoreStore(fb.db, access.user.uid), [fb, access.user.uid]);
   // Restore the position once, when the map first opens.
   const [initialTime] = useState(access.savedTime);
   const [route, navigate] = useHashRoute();
@@ -127,6 +129,7 @@ function SignedInApp({
     <App
       network={network}
       maps={maps}
+      places={places}
       {...(initialTime === null ? {} : { initialTime })}
       onTimeChange={save}
       headerActions={

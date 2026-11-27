@@ -2,16 +2,56 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from './App.tsx';
 import { NETWORK } from './data/network.ts';
+import { createMemoryStore } from './places/memoryStore.ts';
 
 const MAPS = { apiKey: 'test-key', mapId: 'test-map' };
 
 // Google Maps needs a browser with the Maps API; the map itself is covered by the domain tests.
 vi.mock('@vis.gl/react-google-maps', () => ({
   APIProvider: ({ children }: { children: React.ReactNode }) => children,
+  useMapsLibrary: () => null,
 }));
 vi.mock('./components/MapView.tsx', () => ({
-  MapView: ({ time, hidden }: { time: number; hidden: ReadonlySet<string> }) => (
-    <div data-testid="map" data-time={time} data-hidden={[...hidden].join(',')} />
+  MapView: ({
+    time,
+    hidden,
+    children,
+  }: {
+    time: number;
+    hidden: ReadonlySet<string>;
+    children?: React.ReactNode;
+  }) => (
+    <div data-testid="map" data-time={time} data-hidden={[...hidden].join(',')}>
+      {children}
+    </div>
+  ),
+}));
+vi.mock('./places/PlaceSearch.tsx', () => ({
+  PlaceSearch: ({ onPick }: { onPick: (p: unknown) => void }) => (
+    <button
+      type="button"
+      onClick={() => {
+        onPick({ googlePlaceId: 'g-cafe', name: 'קפה ביאליק', address: 'ביאליק 2', lat: 32.07, lng: 34.77 });
+      }}
+    >
+      search result
+    </button>
+  ),
+}));
+vi.mock('./places/PlacesLayer.tsx', () => ({
+  PlacesLayer: ({ places, card }: { places: readonly { name: string }[]; card: React.ReactNode }) => (
+    <div data-testid="pins" data-names={places.map((p) => p.name).join(',')}>
+      {card}
+    </div>
+  ),
+}));
+vi.mock('./places/PlaceDetailsPanel.tsx', () => ({
+  PlaceDetailsPanel: ({ googlePlaceId, onClose }: { googlePlaceId: string; onClose: () => void }) => (
+    <aside aria-label="google details" data-place={googlePlaceId}>
+      <button type="button" onClick={onClose}>
+        close details
+      </button>
+    </aside>
   ),
 }));
 
@@ -166,5 +206,32 @@ describe('App', () => {
     render(<App network={NETWORK} maps={null} />);
     expect(screen.queryByTestId('map')).toBeNull();
     expect(screen.getByRole('note')).toHaveTextContent('VITE_GOOGLE_MAPS_API_KEY');
+  });
+
+  it('saves a searched place, lists it and opens Google details', async () => {
+    const store = createMemoryStore();
+    render(<App network={NETWORK} maps={MAPS} places={store} />);
+    expect(screen.getByRole('tab', { name: 'מקומות מעניינים (0)' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'search result' }));
+    await userEvent.click(screen.getByRole('button', { name: 'שמירה כמקום מעניין' }));
+    expect(screen.getByTestId('pins')).toHaveAttribute('data-names', 'קפה ביאליק');
+
+    await userEvent.click(screen.getByRole('tab', { name: 'מקומות מעניינים (1)' }));
+    expect(screen.getByRole('button', { name: /קפה ביאליק/ })).toHaveAttribute('aria-pressed', 'true');
+
+    await userEvent.click(screen.getByRole('button', { name: 'פרטים מגוגל' }));
+    expect(screen.getByRole('complementary', { name: 'google details' })).toHaveAttribute(
+      'data-place',
+      'g-cafe',
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'close details' }));
+    expect(screen.queryByRole('complementary', { name: 'google details' })).toBeNull();
+  });
+
+  it('hides the places features without a store', () => {
+    render(<App network={NETWORK} maps={MAPS} />);
+    expect(screen.queryByRole('tab')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'search result' })).toBeNull();
   });
 });
