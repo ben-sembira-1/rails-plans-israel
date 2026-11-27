@@ -17,8 +17,9 @@ Guidance for AI agents working in this repository.
 - Map shapes (`Polyline`, `Circle`, …) are updated with Google's merging `setOptions`, so always pass every option
   that can change (e.g. `icons: []` for a solid line), or the old value stays. When an option is only read on
   creation, change the React `key` to recreate the shape.
-- Every PR description includes screenshots of the change from a local test run (desktop, and phone width ~390 px
-  when the UI is affected; for non-visual changes, a screenshot of the relevant local run, e.g. the tests).
+- Every PR description includes screenshots of the change from a local test run, always in **both** a desktop
+  layout and a phone layout (~390 px wide). For a change with no visible UI, show the app in both layouts plus a
+  screenshot of the relevant local run (e.g. the tests).
   `gh` can't upload images, so commit them to the `pr-assets` branch under `pr-<number>/` (a separate orphan
   branch, e.g. via `git worktree`; never force-push it). Images there are stored in Git LFS (its
   `.gitattributes`), so embed them with

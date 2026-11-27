@@ -1,4 +1,4 @@
-import { AdvancedMarker, Circle, InfoWindow, Map, Polyline } from '@vis.gl/react-google-maps';
+import { AdvancedMarker, Circle, useApiIsLoaded, InfoWindow, Map, Polyline } from '@vis.gl/react-google-maps';
 import { Fragment, useEffect, useState } from 'react';
 import type { LatLng, Network, Section, Site, Station, WorksStatus } from '../data/schema.ts';
 import { bandWidthPx } from '../domain/geo.ts';
@@ -352,6 +352,12 @@ export function MapView({ network, time, hidden, mapId, onPoiClick, children }: 
   const [popup, setPopup] = useState<Popup | null>(null);
   const [labels] = useState(() => labelledStations(network.stations));
   const visible = (id: LayerId) => !hidden.has(id);
+  // The place search sits at the top of the map, so the map type switch goes to the bottom. `google` exists only
+  // once the API has loaded, which is also when the map is created.
+  const apiLoaded = useApiIsLoaded();
+  const mapTypeOptions = apiLoaded
+    ? { mapTypeControlOptions: { position: google.maps.ControlPosition.LEFT_BOTTOM } }
+    : {};
 
   return (
     <div className={zoom >= LABEL_ZOOM ? 'map show-labels' : 'map'}>
@@ -360,6 +366,7 @@ export function MapView({ network, time, hidden, mapId, onPoiClick, children }: 
         defaultBounds={{ ...INITIAL_BOUNDS, padding: 20 }}
         gestureHandling="greedy"
         mapTypeControl
+        {...mapTypeOptions}
         streetViewControl={false}
         fullscreenControl={false}
         clickableIcons
