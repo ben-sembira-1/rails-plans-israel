@@ -16,5 +16,7 @@ Guidance for AI agents working in this repository.
 - Every PR description includes screenshots of the change from a local test run (desktop, and phone width ~390 px
   when the UI is affected; for non-visual changes, a screenshot of the relevant local run, e.g. the tests).
   `gh` can't upload images, so commit them to the `pr-assets` branch under `pr-<number>/` (a separate orphan
-  branch, e.g. via `git worktree`; never force-push it) and embed them with
-  `https://raw.githubusercontent.com/ben-sembira-1/rails-plans-israel/pr-assets/pr-<number>/<file>`.
+  branch, e.g. via `git worktree`; never force-push it). Images there are stored in Git LFS (its
+  `.gitattributes`), so embed them with
+  `https://media.githubusercontent.com/media/ben-sembira-1/rails-plans-israel/pr-assets/pr-<number>/<file>`;
+  `raw.githubusercontent.com` serves the LFS pointer, not the image.
