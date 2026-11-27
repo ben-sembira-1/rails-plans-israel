@@ -213,7 +213,8 @@ export class Ui {
     await this.openTab('trains');
     const group = this.page.getByRole('group', { name: 'שכבות בנייה' });
     if ((await group.count()) > 0) return;
-    // Since 0.7 the layer toggles are in the layers picker on the map.
+    // Since 0.7 the layer toggles are in the layers picker on the map, which an open phone sheet covers.
+    await this.closePanel();
     const picker = this.page.getByRole('button', { name: 'שכבות', exact: true });
     if ((await picker.count()) === 0) throw new NotApplicable('this version has no construction layers');
     await picker.click();
@@ -341,6 +342,10 @@ export const SCENARIOS: readonly Scenario[] = [
     title: 'Moved from today to mid 2028 (Purple Line opens): the "what changed" note',
     run: async (ui) => {
       const note = ui.page.getByRole('status', { name: 'מה השתנה' });
+      await ui.openTab('trains');
+      if ((await ui.page.getByRole('group', { name: 'ציר האירועים' }).count()) === 0) {
+        throw new NotApplicable('this version has no "what changed" note');
+      }
       await ui.goToMilestone('2028Q2');
       if ((await note.count()) === 0) throw new NotApplicable('this version has no "what changed" note');
       await ui.closePanel();
