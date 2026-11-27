@@ -3,6 +3,11 @@ import { useEffect } from 'react';
 import type { NewPlace, SavedPlace } from './types.ts';
 
 const STAR_ZOOM = 16;
+/**
+ * Above the pin. A module constant on purpose: the InfoWindow re-opens (firing `close`) whenever it gets a new
+ * pixelOffset array, which would clear the selection on every render.
+ */
+const CARD_OFFSET: [number, number] = [0, -40];
 
 /** Saved places (and the place being added) as pins on the map; the open card shows in an info window. */
 export function PlacesLayer({
@@ -61,7 +66,7 @@ export function PlacesLayer({
       {focus && card !== null && (
         <InfoWindow
           position={{ lat: focus.lat, lng: focus.lng }}
-          pixelOffset={[0, -40]}
+          pixelOffset={CARD_OFFSET}
           maxWidth={320}
           onClose={onCloseCard}
         >
