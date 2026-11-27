@@ -38,8 +38,18 @@ body {
   direction: ltr;
 }
 
-.leaflet-tooltip,
-.leaflet-popup-content {
+.map-missing {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* Google's info window is LTR; our content is Hebrew. */
+.pop {
   direction: rtl;
   text-align: right;
   font-family: Heebo, Arial, sans-serif;
@@ -526,33 +536,66 @@ input:focus-visible {
 }
 
 /* Station labels: permanent tooltips shown only when zoomed in. */
-.leaflet-tooltip.lbl {
-  display: none;
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-  padding: 0 2px;
-  font-size: 11.5px;
-  font-weight: 500;
-  text-shadow:
-    0 0 2px #fff,
-    0 0 3px #fff,
-    0 0 4px #fff;
+/* Station markers (advanced markers: HTML on the map) */
+.stn {
+  position: relative;
+  display: block;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2.5px solid;
+  background: #fff;
+  cursor: pointer;
 }
 
-.show-labels .leaflet-tooltip.lbl {
+.stn.metro {
+  width: 13px;
+  height: 13px;
+  border-width: 3px;
+}
+
+.stn.fut {
+  opacity: 0.45;
+}
+
+.stn.rail {
+  width: 9px;
+  height: 9px;
+  border: 2px solid #333;
+}
+
+.stn .lbl {
+  display: none;
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 5px);
+  transform: translateY(-50%);
+  white-space: nowrap;
+  font:
+    600 11px Heebo,
+    Arial,
+    sans-serif;
+  color: #1d1d1f;
+  text-shadow:
+    0 0 3px #fff,
+    0 0 3px #fff,
+    0 0 3px #fff;
+  pointer-events: none;
+}
+
+.stn .rail-lbl {
+  right: auto;
+  left: calc(100% + 5px);
+}
+
+.show-labels .stn .lbl {
   display: block;
 }
 
-.show-labels .leaflet-tooltip.lbl.fut {
-  color: #888;
+.show-labels .stn.fut .lbl {
+  color: #5f6368;
 }
 
-.leaflet-tooltip.lbl::before {
-  display: none;
-}
-
-/* Full-page screens (sign-in, waiting for approval) */
 .screen {
   min-height: 100%;
   display: grid;

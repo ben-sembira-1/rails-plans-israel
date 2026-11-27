@@ -1,19 +1,5 @@
-import 'leaflet/dist/leaflet.css';
-import type { PathOptions } from 'leaflet';
-import { useEffect, useState } from 'react';
-import {
-  Circle,
-  CircleMarker,
-  LayersControl,
-  MapContainer,
-  Pane,
-  Polyline,
-  Popup,
-  TileLayer,
-  Tooltip,
-  useMap,
-  useMapEvents,
-} from 'react-leaflet';
+import { AdvancedMarker, Circle, InfoWindow, Map, Polyline } from '@vis.gl/react-google-maps';
+import { Fragment, useEffect, useState } from 'react';
 import type { LatLng, Network, Section, Site, Station, WorksStatus } from '../data/schema.ts';
 import { bandWidthPx } from '../domain/geo.ts';
 import { LINES, type LayerId } from '../domain/lines.ts';
@@ -26,12 +12,13 @@ import {
   statusAt,
 } from '../domain/status.ts';
 import { formatTime, stepBefore } from '../domain/time.ts';
-import { sectionLineStyle, sectionPane } from './sectionStyle.ts';
+import { sectionLineStyle, sectionZ, Z } from './sectionStyle.ts';
 
 const CENTER_LAT = 32.07;
 const LABEL_ZOOM = 15;
 const INNER_M = 20;
 const OUTER_M = 100;
+const INITIAL_BOUNDS = { south: 31.98, west: 34.74, north: 32.17, east: 34.92 };
 
 /** [inner band, outer band] colors. */
 const ZONE_COLORS: Readonly<Partial<Record<WorksStatus, readonly [string, string]>>> = {
@@ -39,21 +26,21 @@ const ZONE_COLORS: Readonly<Partial<Record<WorksStatus, readonly [string, string
   minor: ['#E0A800', '#FFE38A'],
 };
 
-const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services';
-const ESRI_ATTR = 'Tiles &copy; Esri';
-
 function lineWeight(section: { line: Section['line'] }): number {
   return LINES[section.line].metro ? 6 : 5;
 }
 
-function useZoom(initial: number): number {
-  const [zoom, setZoom] = useState(initial);
-  const map = useMapEvents({
-    zoomend: () => {
-      setZoom(map.getZoom());
-    },
-  });
-  return zoom;
+const toLatLng = ([lat, lng]: LatLng): google.maps.LatLngLiteral => ({ lat, lng });
+
+/** A popup anchored at a map position. */
+interface Popup {
+  readonly position: google.maps.LatLngLiteral;
+  readonly content: React.ReactNode;
+}
+type OpenPopup = (popup: Popup) => void;
+
+function clickPosition(e: google.maps.MapMouseEvent): google.maps.LatLngLiteral | null {
+  return e.latLng?.toJSON() ?? null;
 }
 
 function SectionPopup({ section }: { section: Section }) {
@@ -78,138 +65,133 @@ function SectionPopup({ section }: { section: Section }) {
   );
 }
 
-function SectionLayer({ section, time, zoom }: { section: Section; time: number; zoom: number }) {
+function SectionLayer({
+  section,
+  time,
+  zoom,
+  onPopup,
+}: {
+  section: Section;
+  time: number;
+  zoom: number;
+  onPopup: OpenPopup;
+}) {
   const status = statusAt(section, time);
   const zone = ZONE_COLORS[status];
   const w = lineWeight(section);
   const outer = bandWidthPx(OUTER_M, zoom, CENTER_LAT, 5);
   const inner = bandWidthPx(INNER_M, zoom, CENTER_LAT, 2);
-  const lineStyle = sectionLineStyle(status, w);
-  const round = { lineCap: 'round', lineJoin: 'round' } as const;
+  const line = sectionLineStyle(status, w, LINES[section.line].color);
+  const z = sectionZ(status);
+  const casingOpacity = status === 'none' ? 0 : status === 'open' ? 1 : 0.9;
+  const onClick = (e: google.maps.MapMouseEvent) => {
+    const position = clickPosition(e);
+    if (position) onPopup({ position, content: <SectionPopup section={section} /> });
+  };
   return (
     <>
-      {section.paths.map((p, i) => (
-        // Paths never reorder, so the index is a stable key.
-        <SectionPath
-          key={i}
-          path={p}
-          zone={zone}
-          outer={outer}
-          inner={inner}
-          section={section}
-          status={status}
-          lineStyle={{ ...round, ...lineStyle }}
-          casing={{ ...round, weight: w + 3, opacity: status === 'none' ? 0 : status === 'open' ? 1 : 0.9 }}
-        />
-      ))}
+      {section.paths.map((p, i) => {
+        const path = p.map(toLatLng);
+        return (
+          // Paths never reorder, so the index is a stable key.
+          <Fragment key={i}>
+            {zone !== undefined && (
+              <>
+                <Polyline
+                  path={path}
+                  strokeColor={zone[1]}
+                  strokeOpacity={0.5}
+                  strokeWeight={outer}
+                  zIndex={Z.zoneOuter}
+                  clickable={false}
+                />
+                <Polyline
+                  path={path}
+                  strokeColor={zone[0]}
+                  strokeOpacity={0.6}
+                  strokeWeight={inner}
+                  zIndex={Z.zoneInner}
+                  clickable={false}
+                />
+              </>
+            )}
+            <Polyline
+              path={path}
+              strokeColor="#fff"
+              strokeOpacity={casingOpacity}
+              strokeWeight={w + 3}
+              zIndex={z.casing}
+              clickable={false}
+            />
+            <Polyline
+              path={path}
+              strokeColor={LINES[section.line].color}
+              strokeOpacity={line.strokeOpacity}
+              strokeWeight={line.strokeWeight}
+              icons={line.icons}
+              zIndex={z.line}
+              onClick={onClick}
+            />
+          </Fragment>
+        );
+      })}
     </>
   );
 }
 
-interface SectionPathProps {
-  path: readonly LatLng[];
-  zone: readonly [string, string] | undefined;
-  outer: number;
-  inner: number;
-  section: Section;
-  status: WorksStatus;
-  lineStyle: PathOptions;
-  casing: PathOptions;
-}
-
-function SectionPath({ path, zone, outer, inner, section, status, lineStyle, casing }: SectionPathProps) {
-  const positions = path as [number, number][];
-  const round = { lineCap: 'round', lineJoin: 'round', interactive: false } as const;
-  const pane = sectionPane(status);
+function SitePopup({ site }: { site: Site }) {
   return (
-    <>
-      {zone !== undefined && (
-        <>
-          <Polyline
-            pane="zoneOuter"
-            positions={positions}
-            pathOptions={{ ...round, color: zone[1], weight: outer, opacity: 1 }}
-          />
-          <Polyline
-            pane="zoneInner"
-            positions={positions}
-            pathOptions={{ ...round, color: zone[0], weight: inner, opacity: 1 }}
-          />
-        </>
-      )}
-      {/* Keyed by pane: a Leaflet path can't move between panes, so it is recreated instead. */}
-      <Polyline
-        key={`casing-${pane}`}
-        pane={pane}
-        positions={positions}
-        pathOptions={{ ...casing, color: '#fff', interactive: false }}
-      />
-      <Polyline
-        key={`line-${pane}`}
-        pane={pane}
-        positions={positions}
-        pathOptions={{ ...lineStyle, color: LINES[section.line].color }}
-      >
-        <Tooltip sticky>
-          {section.name} · {STATUS_LABEL[status]}
-        </Tooltip>
-        <Popup maxWidth={360}>
-          <SectionPopup section={section} />
-        </Popup>
-      </Polyline>
-    </>
+    <div className="pop">
+      <b>
+        {site.name}
+        {site.approximate ? ' (מיקום משוער)' : ''}
+      </b>
+      <table>
+        <tbody>
+          <tr>
+            <td dir="ltr" className="range">
+              {formatTime(site.since)}–{formatTime(stepBefore(METRO_HEAVY_WORKS_FROM))}
+            </td>
+            <td>עבודות קלות: {site.note}</td>
+          </tr>
+          <tr>
+            <td dir="ltr" className="range">
+              {formatTime(METRO_HEAVY_WORKS_FROM)}–2033
+            </td>
+            <td>עבודות כבדות לאורך הקו</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   );
 }
 
-function SiteLayer({ site, time }: { site: Site; time: number }) {
+function SiteLayer({ site, time, onPopup }: { site: Site; time: number; onPopup: OpenPopup }) {
   if (!isSiteActive(site, time)) return null;
   const [inner, outer] = ZONE_COLORS.minor ?? ['#E0A800', '#FFE38A'];
-  const center: [number, number] = [site.position[0], site.position[1]];
+  const center = toLatLng(site.position);
   return (
     <>
       <Circle
-        pane="zoneOuter"
         center={center}
         radius={OUTER_M}
-        pathOptions={{ stroke: false, fillColor: outer, fillOpacity: 1, interactive: false }}
+        strokeWeight={0}
+        fillColor={outer}
+        fillOpacity={0.5}
+        zIndex={Z.zoneOuter}
+        onClick={(e: google.maps.MapMouseEvent) => {
+          onPopup({ position: clickPosition(e) ?? center, content: <SitePopup site={site} /> });
+        }}
       />
       <Circle
-        pane="zoneInner"
         center={center}
         radius={INNER_M}
-        pathOptions={{ stroke: false, fillColor: inner, fillOpacity: 1, interactive: false }}
+        strokeWeight={0}
+        fillColor={inner}
+        fillOpacity={0.6}
+        zIndex={Z.zoneInner}
+        clickable={false}
       />
-      <Circle
-        pane="zoneInner"
-        center={center}
-        radius={OUTER_M}
-        pathOptions={{ stroke: false, fillOpacity: 0 }}
-      >
-        <Popup>
-          <div className="pop">
-            <b>
-              {site.name}
-              {site.approximate ? ' (מיקום משוער)' : ''}
-            </b>
-            <table>
-              <tbody>
-                <tr>
-                  <td dir="ltr" className="range">
-                    {formatTime(site.since)}–{formatTime(stepBefore(METRO_HEAVY_WORKS_FROM))}
-                  </td>
-                  <td>עבודות קלות: {site.note}</td>
-                </tr>
-                <tr>
-                  <td dir="ltr" className="range">
-                    {formatTime(METRO_HEAVY_WORKS_FROM)}–2033
-                  </td>
-                  <td>עבודות כבדות לאורך הקו</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </Popup>
-      </Circle>
     </>
   );
 }
@@ -233,53 +215,65 @@ function labelledStations(stations: readonly Station[]): ReadonlySet<Station> {
   return out;
 }
 
-function StationMarker({ station, time, label }: { station: Station; time: number; label: boolean }) {
+function StationMarker({
+  station,
+  time,
+  label,
+  onPopup,
+}: {
+  station: Station;
+  time: number;
+  label: boolean;
+  onPopup: OpenPopup;
+}) {
   const open = station.opens <= time;
-  const metro = LINES[station.line].metro;
+  const line = LINES[station.line];
+  const position = toLatLng(station.position);
   return (
-    <CircleMarker
-      pane="stations"
-      center={[station.position[0], station.position[1]]}
-      radius={metro ? 5.5 : 4.5}
-      pathOptions={{
-        color: LINES[station.line].color,
-        weight: metro ? 3 : 2.5,
-        fillColor: '#fff',
-        opacity: open ? 1 : 0.45,
-        fillOpacity: open ? 1 : 0.45,
+    <AdvancedMarker
+      position={position}
+      anchorLeft="-50%"
+      anchorTop="-50%"
+      title={station.name}
+      onClick={() => {
+        onPopup({
+          position,
+          content: (
+            <div className="pop">
+              <b>{station.name}</b>
+              <div>
+                <span className="dot" style={{ background: line.color }} />
+                {line.name}
+              </div>
+              <div>
+                פתיחה: {formatTime(station.opens)}
+                {station.opens === 2037 ? ' (יעד רשמי 2034–2037)' : ''}
+              </div>
+              {station.approximate && <div>מיקום משוער</div>}
+            </div>
+          ),
+        });
       }}
     >
-      <Popup>
-        <div className="pop">
-          <b>{station.name}</b>
-          <div>
-            <span className="dot" style={{ background: LINES[station.line].color }} />
-            {LINES[station.line].name}
-          </div>
-          <div>
-            פתיחה: {formatTime(station.opens)}
-            {station.opens === 2037 ? ' (יעד רשמי 2034–2037)' : ''}
-          </div>
-          {station.approximate && <div>מיקום משוער</div>}
-        </div>
-      </Popup>
-      {label && (
-        // Leaflet reads a tooltip's className only on creation, so recreate it when the station opens.
-        <Tooltip
-          key={open ? 'open' : 'future'}
-          permanent
-          direction="right"
-          offset={[9, 0]}
-          className={`lbl${open ? '' : ' fut'}`}
-        >
-          {station.name}
-        </Tooltip>
-      )}
-    </CircleMarker>
+      <span
+        className={`stn${line.metro ? ' metro' : ''}${open ? '' : ' fut'}`}
+        style={{ borderColor: line.color }}
+      >
+        {label && <span className="lbl">{station.name}</span>}
+      </span>
+    </AdvancedMarker>
   );
 }
 
-function RailLayer({ network }: { network: Network }) {
+const RAIL_DASH = [
+  {
+    icon: { path: 'M 0,-1 0,1', scale: 3, strokeOpacity: 1, strokeWeight: 1.6 },
+    offset: '0',
+    repeat: '12px',
+  },
+];
+
+function RailLayer({ network, onPopup }: { network: Network; onPopup: OpenPopup }) {
   const [paths, setPaths] = useState<readonly (readonly LatLng[])[]>(network.railFallback);
   useEffect(() => {
     const ac = new AbortController();
@@ -294,154 +288,127 @@ function RailLayer({ network }: { network: Network }) {
   }, []);
   return (
     <>
-      {paths.map((p, i) => (
-        <RailPath key={i} path={p} />
-      ))}
-      {network.railStations.map((s) => (
-        <CircleMarker
-          key={s.name}
-          pane="stations"
-          center={[s.position[0], s.position[1]]}
-          radius={4}
-          pathOptions={{ color: '#333', weight: 2, fillColor: '#fff', fillOpacity: 1 }}
-        >
-          <Popup>
-            <div className="pop">
-              <b>{s.name}</b>
-              <div>רכבת ישראל · פועלת</div>
-            </div>
-          </Popup>
-          <Tooltip permanent direction="left" offset={[-9, 0]} className="lbl">
-            {s.name}
-          </Tooltip>
-        </CircleMarker>
-      ))}
+      {paths.map((p, i) => {
+        const path = p.map(toLatLng);
+        return (
+          <Fragment key={i}>
+            <Polyline path={path} strokeColor="#4a4a4a" strokeWeight={4} zIndex={Z.rail} clickable={false} />
+            <Polyline
+              path={path}
+              strokeColor="#fff"
+              strokeOpacity={0}
+              strokeWeight={1.6}
+              icons={RAIL_DASH}
+              zIndex={Z.rail}
+              clickable={false}
+            />
+          </Fragment>
+        );
+      })}
+      {network.railStations.map((s) => {
+        const position = toLatLng(s.position);
+        return (
+          <AdvancedMarker
+            key={s.name}
+            position={position}
+            anchorLeft="-50%"
+            anchorTop="-50%"
+            title={s.name}
+            onClick={() => {
+              onPopup({
+                position,
+                content: (
+                  <div className="pop">
+                    <b>{s.name}</b>
+                    <div>רכבת ישראל · פועלת</div>
+                  </div>
+                ),
+              });
+            }}
+          >
+            <span className="stn rail">
+              <span className="lbl rail-lbl">{s.name}</span>
+            </span>
+          </AdvancedMarker>
+        );
+      })}
     </>
   );
-}
-
-function RailPath({ path }: { path: readonly LatLng[] }) {
-  const positions = path as [number, number][];
-  return (
-    <>
-      <Polyline
-        pane="rail"
-        positions={positions}
-        pathOptions={{ color: '#4a4a4a', weight: 4, interactive: false }}
-      />
-      <Polyline
-        pane="rail"
-        positions={positions}
-        pathOptions={{ color: '#fff', weight: 1.6, dashArray: '6 6', interactive: false }}
-      />
-    </>
-  );
-}
-
-function Layers({ network, time, hidden }: MapViewProps) {
-  const zoom = useZoom(12);
-  const [labels] = useState(() => labelledStations(network.stations));
-  const visible = (id: LayerId) => !hidden.has(id);
-  return (
-    <>
-      <LabelToggle show={zoom >= LABEL_ZOOM} />
-      {visible('rail') && <RailLayer network={network} />}
-      {network.sections
-        .filter((s) => visible(s.line))
-        .map((s) => (
-          <SectionLayer key={s.id} section={s} time={time} zoom={zoom} />
-        ))}
-      {network.sites
-        .filter((s) => visible(s.line))
-        .map((s) => (
-          <SiteLayer key={s.id} site={s} time={time} />
-        ))}
-      {network.stations
-        .filter((s) => visible(s.line))
-        .map((s) => (
-          <StationMarker
-            key={`${s.line}-${s.name}-${s.position.join(',')}`}
-            station={s}
-            time={time}
-            label={labels.has(s)}
-          />
-        ))}
-    </>
-  );
-}
-
-/** Station names are permanent tooltips, hidden by CSS until zoomed in close. */
-function LabelToggle({ show }: { show: boolean }) {
-  const map = useMapEvents({});
-  useEffect(() => {
-    map.getContainer().classList.toggle('show-labels', show);
-  }, [map, show]);
-  return null;
-}
-
-/** Keeps Leaflet's size in sync when the layout around the map changes (e.g. the timeline dock opens). */
-function AutoResize() {
-  const map = useMap();
-  useEffect(() => {
-    const observer = new ResizeObserver(() => {
-      map.invalidateSize();
-    });
-    observer.observe(map.getContainer());
-    return () => {
-      observer.disconnect();
-    };
-  }, [map]);
-  return null;
 }
 
 export interface MapViewProps {
   readonly network: Network;
   readonly time: number;
   readonly hidden: ReadonlySet<LayerId>;
+  readonly mapId: string;
+  /** A click on a Google point of interest (shop, park, …). */
+  readonly onPoiClick?: (placeId: string, position: google.maps.LatLngLiteral) => void;
+  /** Extra layers (e.g. places of interest). */
+  readonly children?: React.ReactNode;
 }
 
-export function MapView(props: MapViewProps) {
+export function MapView({ network, time, hidden, mapId, onPoiClick, children }: MapViewProps) {
+  const [zoom, setZoom] = useState(12);
+  const [popup, setPopup] = useState<Popup | null>(null);
+  const [labels] = useState(() => labelledStations(network.stations));
+  const visible = (id: LayerId) => !hidden.has(id);
+
   return (
-    <MapContainer
-      className="map"
-      bounds={[
-        [31.98, 34.74],
-        [32.17, 34.92],
-      ]}
-      boundsOptions={{ padding: [20, 20] }}
-      zoomControl
-    >
-      <LayersControl position="topleft">
-        <LayersControl.BaseLayer checked name="מפת רחובות">
-          <TileLayer
-            url={`${ESRI}/World_Street_Map/MapServer/tile/{z}/{y}/{x}`}
-            attribution={ESRI_ATTR}
-            maxZoom={19}
-          />
-        </LayersControl.BaseLayer>
-        <LayersControl.BaseLayer name="טופוגרפית">
-          <TileLayer
-            url={`${ESRI}/World_Topo_Map/MapServer/tile/{z}/{y}/{x}`}
-            attribution={ESRI_ATTR}
-            maxZoom={19}
-          />
-        </LayersControl.BaseLayer>
-        <LayersControl.BaseLayer name="לוויין">
-          <TileLayer
-            url={`${ESRI}/World_Imagery/MapServer/tile/{z}/{y}/{x}`}
-            attribution={ESRI_ATTR}
-            maxZoom={19}
-          />
-        </LayersControl.BaseLayer>
-      </LayersControl>
-      <Pane name="rail" style={{ zIndex: 410 }} />
-      <Pane name="zoneOuter" style={{ zIndex: 415, opacity: 0.5 }} />
-      <Pane name="zoneInner" style={{ zIndex: 416, opacity: 0.6 }} />
-      <Pane name="future" style={{ zIndex: 420 }} />
-      <Pane name="lines" style={{ zIndex: 430 }} />
-      <Pane name="stations" style={{ zIndex: 640 }} />
-      <AutoResize />
-      <Layers {...props} />
-    </MapContainer>
+    <div className={zoom >= LABEL_ZOOM ? 'map show-labels' : 'map'}>
+      <Map
+        mapId={mapId}
+        defaultBounds={{ ...INITIAL_BOUNDS, padding: 20 }}
+        gestureHandling="greedy"
+        mapTypeControl
+        streetViewControl={false}
+        fullscreenControl={false}
+        clickableIcons
+        onCameraChanged={(e) => {
+          setZoom(Math.round(e.detail.zoom));
+        }}
+        onClick={(e) => {
+          const { placeId, latLng } = e.detail;
+          if (placeId && latLng && onPoiClick) {
+            // Show our own card instead of Google's default info window.
+            e.stop();
+            onPoiClick(placeId, latLng);
+          }
+        }}
+      >
+        {visible('rail') && <RailLayer network={network} onPopup={setPopup} />}
+        {network.sections
+          .filter((s) => visible(s.line))
+          .map((s) => (
+            <SectionLayer key={s.id} section={s} time={time} zoom={zoom} onPopup={setPopup} />
+          ))}
+        {network.sites
+          .filter((s) => visible(s.line))
+          .map((s) => (
+            <SiteLayer key={s.id} site={s} time={time} onPopup={setPopup} />
+          ))}
+        {network.stations
+          .filter((s) => visible(s.line))
+          .map((s) => (
+            <StationMarker
+              key={`${s.line}-${s.name}-${s.position.join(',')}`}
+              station={s}
+              time={time}
+              label={labels.has(s)}
+              onPopup={setPopup}
+            />
+          ))}
+        {popup && (
+          <InfoWindow
+            position={popup.position}
+            onClose={() => {
+              setPopup(null);
+            }}
+          >
+            <div dir="rtl">{popup.content}</div>
+          </InfoWindow>
+        )}
+        {children}
+      </Map>
+    </div>
   );
 }
