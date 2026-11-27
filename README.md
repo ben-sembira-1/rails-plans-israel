@@ -13,9 +13,11 @@ See [docs/TARGET.md](docs/TARGET.md) for what the site shows and why.
   **under works** (dashed, inside a work zone) or **planned** (dotted).
 - **Work zones** to real scale: a dark band up to 20 m from the line and a light band to 100 m; orange for heavy
   works, yellow for light works. Metro preparatory sites are circular zones until the line-wide works start (2029).
-- **Timeline dock** at the bottom: quarterly until 2029Q4, yearly from 2030, then "no announced date" (the full
-  network). Previous/next event buttons; on desktop every event is a marker on the bar with the main milestones
-  bigger; on phones the event list opens from an "events and details" toggle.
+- **Timeline** at the top of the side panel: quarterly until 2029Q4, yearly from 2030, then "no announced date"
+  (the full network). Previous/next event buttons, a clickable "today" marker, and every event as a marker on the
+  bar with the main milestones bigger.
+- **Places of interest**: search a place on the Google map (or click one), save it, add comments, and open
+  Google's details (photos, opening hours, reviews). Saved per user in Firebase.
 - **Top strip**: logo, name, version and the time shown; admins get an admin center button.
 - **Accounts**: Google sign-in; new users wait for the admin's approval; each user's last timeline position is
   saved and restored.
@@ -31,15 +33,17 @@ pre-commit run --all-files  # prettier, eslint, tsc, file hygiene
 npm run build
 ```
 
-To develop with sign-in, copy `.env.example` to `.env.local` and fill in the Firebase web-app config
-(see [docs/FIREBASE.md](docs/FIREBASE.md)).
+Copy `.env.example` to `.env.local` and set at least `VITE_GOOGLE_MAPS_API_KEY` (see
+[docs/GOOGLE_MAPS.md](docs/GOOGLE_MAPS.md)); without Firebase config, places are kept in memory only. To develop
+with sign-in, also fill in the Firebase web-app config (see [docs/FIREBASE.md](docs/FIREBASE.md)).
 
 | Path                    | What                                                            |
 | ----------------------- | --------------------------------------------------------------- |
 | `src/data/network.json` | Sections (geometry + works phases), sites, stations, rail layer |
 | `src/data/schema.ts`    | Types and the runtime validator for `network.json`              |
 | `src/domain/`           | Pure logic: time steps and formatting, status at a time, events |
-| `src/components/`       | Map, timeline panel, legend                                     |
+| `src/components/`       | Google map layers, timeline, side panel, legend                 |
+| `src/places/`           | Places of interest: search, pins, comments, Google details      |
 | `src/auth/`             | Firebase sign-in, approval flow, admin panel, saved position    |
 | `firestore.rules`       | Server-side access rules                                        |
 | `scripts/version.ts`    | Version-bump check used by CI                                   |

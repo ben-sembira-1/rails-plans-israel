@@ -3,8 +3,9 @@
 GitHub Pages only serves static files, so sign-in and per-user data use Firebase (free Spark plan is enough):
 
 - **Firebase Authentication** – Google sign-in.
-- **Cloud Firestore** – `users/{uid}` (access request, approval flag, last timeline position) and
-  `config/access` (the admin list). [`firestore.rules`](../firestore.rules) enforces who may read and write what.
+- **Cloud Firestore** – `users/{uid}` (access request, approval flag, last timeline position),
+  `users/{uid}/places/{placeId}` (places of interest) with `comments/{commentId}`, and `config/access` (the admin
+  list). [`firestore.rules`](../firestore.rules) enforces who may read and write what.
 
 The map data itself is part of this public repository, so the gate controls access to the site, not secrecy of the
 data.
