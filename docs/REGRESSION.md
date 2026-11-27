@@ -53,9 +53,11 @@ capture it again.
 
 ## PR process
 
+In CI this whole process runs when the owner adds the `agent:finish` label ([CI-AGENT.md](CI-AGENT.md)). By hand:
+
 1. Open the PR as a **draft**.
-2. Run the regression, then upload `regression-output/current/*` and `regression-output/compare/*` to the
-   `pr-assets` branch under `pr-<n>/regression/` (Git LFS; see CLAUDE.md).
+2. Run the regression, then upload the images with `scripts/upload-pr-assets.sh <n>` (to the `pr-assets` branch
+   under `pr-<n>/regression/`, Git LFS).
 3. Evaluate every comparison sheet: what changed against `master`, and whether each change is intended.
 4. Write the PR description in this order:
    1. text: what and why;

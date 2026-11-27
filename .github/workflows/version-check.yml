@@ -1,24 +1,76 @@
 name: Version check
 
-# PRs to master must bump package.json's version above the latest vX.Y.Z release tag.
+# A PR's version comes from its label: exactly one of release:patch, release:minor or release:major.
+# This job computes the version (the newer of master's version and the latest vX.Y.Z tag, bumped by the label) and,
+# if package.json differs, commits it to the PR branch. That push re-runs the checks, and this job then passes.
 on:
   pull_request:
     branches: [master]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 
 permissions:
   contents: read
+
+concurrency:
+  group: version-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   version-check:
     name: version-check
     runs-on: ubuntu-latest
     steps:
+      - name: Exactly one release label
+        id: level
+        env:
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          levels=$(jq -r '.[] | select(startswith("release:")) | sub("^release:"; "")' <<<"$LABELS")
+          if [ "$(grep -c . <<<"$levels")" != 1 ] || ! grep -qxE 'patch|minor|major' <<<"$levels"; then
+            echo "::error::Add exactly one label: release:patch, release:minor or release:major"
+            exit 1
+          fi
+          echo "level=$levels" >> "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@v7
         with:
+          # The PR branch itself (not the merge commit), so the version commit can be pushed to it.
+          ref: ${{ github.head_ref }}
           fetch-depth: 0
           fetch-tags: true
+          # Pushes with the default token don't trigger workflows, so the new commit would never get its checks.
+          token: ${{ secrets.RELEASE_BOT_TOKEN || github.token }}
+
       - uses: actions/setup-node@v7
         with:
           node-version: 24
+
+      - name: Set the version from the label
+        id: bump
+        env:
+          LEVEL: ${{ steps.level.outputs.level }}
+          HAS_BOT_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN != '' }}
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          git fetch --quiet origin master
+          target=$(node scripts/version.ts target "$LEVEL")
+          current=$(node scripts/version.ts current)
+          if [ "$target" = "$current" ]; then
+            echo "Version $current matches release:$LEVEL"
+            exit 0
+          fi
+          if [ "$HAS_BOT_TOKEN" != "true" ]; then
+            echo "::error::Version should be $target (release:$LEVEL), not $current. Add the RELEASE_BOT_TOKEN secret (docs/CI-AGENT.md) or run: npm version $target --no-git-tag-version"
+            exit 1
+          fi
+          npm version "$target" --no-git-tag-version --ignore-scripts > /dev/null
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --quiet -am "chore: version $target (release:$LEVEL)"
+          git push --quiet origin "HEAD:$BRANCH"
+          echo "Pushed version $target; the checks re-run on the new commit."
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+
       - name: Version is bumped above the latest release tag
+        if: steps.bump.outputs.pushed != 'true'
         run: node scripts/version.ts check
