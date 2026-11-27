@@ -18,6 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # The secret scan reads the whole history.
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -30,6 +33,8 @@ jobs:
         uses: pre-commit/action@v3.0.1
         with:
           extra_args: --all-files --show-diff-on-failure
+      - name: Secret scan (full history)
+        run: pre-commit run gitleaks-history --hook-stage manual --all-files
       - name: Unit tests
         run: npm test
       - name: Build

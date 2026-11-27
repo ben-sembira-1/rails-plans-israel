@@ -82,7 +82,8 @@ point in time:
 - Vite + React + TypeScript with the strictest compiler settings, and strict ESLint.
 - Data lives in JSON (`src/data/network.json`), typed by `src/data/schema.ts`, and validated by unit tests.
 - Domain logic (time steps, formatting, status at a time, events) is pure TypeScript with unit tests.
-- `pre-commit` runs formatting, linting and type checks locally and in CI. CI also runs the tests and the build.
+- `pre-commit` runs formatting, linting, type checks and a secret scan (gitleaks) locally and in CI. CI also scans
+  the whole git history for secrets, and runs the tests and the build.
 - **Versioning**: the version in `package.json` is shown in the UI. Every PR to `master` must bump it above the
   latest `vX.Y.Z` tag; a CI job fails otherwise.
 - **CD**: on every merge to `master`, a workflow tags the commit `vX.Y.Z` and deploys the site to GitHub Pages.

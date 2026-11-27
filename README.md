@@ -29,7 +29,7 @@ npm ci
 pre-commit install          # once
 npm run dev                 # http://localhost:5173/rails-plans-israel/ (no sign-in without .env.local)
 npm test
-pre-commit run --all-files  # prettier, eslint, tsc, file hygiene
+pre-commit run --all-files  # prettier, eslint, tsc, file hygiene, secret scan (gitleaks)
 npm run build
 ```
 

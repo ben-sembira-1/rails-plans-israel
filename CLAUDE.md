@@ -9,6 +9,8 @@ Guidance for AI agents working in this repository.
 - Data: `src/data/network.json`, validated by `src/data/schema.ts` (tests fail on invalid data). Time values are
   decimal years (2026.75 = 2026Q4); `9999` means "no announced date".
 - Keep TypeScript and ESLint strict; do not disable rules to make code pass.
+- Never commit keys or other secrets (`.env.local` is git-ignored). gitleaks blocks them in pre-commit and CI; do
+  not bypass it (`--no-verify`, allowlists) to get a commit through.
 - Before committing: `pre-commit run --all-files`, `npm test`, `npm run build`.
 - Changes reach `master` only via PRs, and every PR must bump `version` in `package.json` above the latest
   `vX.Y.Z` tag. Merging tags the release and deploys GitHub Pages. Never force-push.
