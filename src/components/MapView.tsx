@@ -264,7 +264,14 @@ function StationMarker({ station, time, label }: { station: Station; time: numbe
         </div>
       </Popup>
       {label && (
-        <Tooltip permanent direction="right" offset={[9, 0]} className={`lbl${open ? '' : ' fut'}`}>
+        // Leaflet reads a tooltip's className only on creation, so recreate it when the station opens.
+        <Tooltip
+          key={open ? 'open' : 'future'}
+          permanent
+          direction="right"
+          offset={[9, 0]}
+          className={`lbl${open ? '' : ' fut'}`}
+        >
           {station.name}
         </Tooltip>
       )}
