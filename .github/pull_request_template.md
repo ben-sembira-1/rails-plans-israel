@@ -1,5 +1,9 @@
 <!-- Open as a draft. Mark ready only after the regression below is captured and evaluated (docs/REGRESSION.md). -->
 
+# vX.Y.Z
+
+<!-- The new version (package.json) is the title of the whole description. -->
+
 <!-- 1. What and why -->
 
 ## Features

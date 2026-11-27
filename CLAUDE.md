@@ -20,7 +20,7 @@ Guidance for AI agents working in this repository.
 - **PRs open as drafts.** Before marking one ready, run the regression (`npm run regression`, see
   [docs/REGRESSION.md](docs/REGRESSION.md)): every scenario in `regression/scenarios.ts`, in a desktop and a phone
   layout, compared with `master`.
-  Evaluate every comparison sheet yourself. The PR description is, in order: text; big screenshots of the
+  Evaluate every comparison sheet yourself. The PR description is, in order: the new version as its top header (`# vX.Y.Z`); text; big screenshots of the
   features the PR adds (desktop and phone); a **Regression** section that starts with **one bullet list of every
   difference from `master` (and its commit), each with why it is OK and expected**, then a statement that you
   evaluated the images against `master`, then the small images (linking to full size). Keep
