@@ -78,9 +78,6 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # The workflow's own token instead of the Claude app's: the app refuses to run a workflow file that differs
-          # from master's, which would block every PR that changes this file. The job's permissions cover it.
-          github_token: ${{ github.token }}
           prompt: |
             You are finishing pull request #${{ github.event.pull_request.number }} of ${{ github.repository }}.
             Follow CLAUDE.md and docs/REGRESSION.md exactly. Do not change any code or push anything.
