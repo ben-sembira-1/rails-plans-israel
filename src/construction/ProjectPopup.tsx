@@ -1,13 +1,10 @@
 import type { Project } from '../data/construction.ts';
 import { formatTime, stepBefore } from '../domain/time.ts';
-import { STATUS_TEXT } from './style.ts';
+import { formatDate } from '../components/format.ts';
+import { Estimated, PopupFrame } from '../components/PopupFrame.tsx';
+import { LAYER_COLOR, STATUS_TEXT } from './style.ts';
 
 const SOURCE: Readonly<Record<string, string>> = { 'tel-aviv': 'עיריית תל אביב–יפו' };
-
-function updated(iso: string): string {
-  const d = new Date(iso);
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getFullYear())}`;
-}
 
 /** "2025Q2–2026Q3": from a phase's start to the step before the next one (or before the end of works). */
 function range(from: number, to: number | null): string {
@@ -16,8 +13,42 @@ function range(from: number, to: number | null): string {
   return last <= from ? formatTime(from) : `${formatTime(from)}–${formatTime(last)}`;
 }
 
-/** The popup of a construction project: what is built, its phases and the city's details. */
-export function ProjectPopup({ project: p, fetchedAt }: { project: Project; fetchedAt: string }) {
+/** How far the works are, by time: a thin bar in the building's color and the share in words. */
+function Progress({ value, estimated }: { value: number; estimated: boolean }) {
+  const pct = Math.round(value * 100);
+  return (
+    <div className="pop-progress">
+      <div className="pop-progress-text">
+        <span>
+          עבר <b>{pct}%</b> מזמן הבנייה
+        </span>
+        {estimated && <Estimated>לפי סיום משוער</Estimated>}
+      </div>
+      <div
+        className="pop-progress-bar"
+        role="progressbar"
+        aria-label="התקדמות הבנייה לפי הזמן"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={pct}
+      >
+        <span style={{ inlineSize: `${String(pct)}%` }} />
+      </div>
+    </div>
+  );
+}
+
+/** The popup of a construction project: what is built, how far its works are, its phases and the city's details. */
+export function ProjectPopup({
+  project: p,
+  fetchedAt,
+  progress,
+}: {
+  project: Project;
+  fetchedAt: string;
+  /** Share of the works' time that has passed, for a building under construction at the time shown. */
+  progress?: number | undefined;
+}) {
   const facts = [
     p.stage && `שלב בנייה: ${p.stage}`,
     p.units !== undefined && `${String(p.units)} יח״ד`,
@@ -25,10 +56,22 @@ export function ProjectPopup({ project: p, fetchedAt }: { project: Project; fetc
     p.nightWorks && 'אושרו עבודות לילה',
     p.traffic,
   ].filter((x): x is string => typeof x === 'string' && x !== '');
+  const color = p.kind === 'road' ? LAYER_COLOR.road : LAYER_COLOR.construction;
+  const current = p.phases.at(-1)?.status;
   return (
-    <div className="pop project-pop">
-      <b>{p.title}</b>
-      <div>{p.address}</div>
+    <PopupFrame
+      className="project-pop"
+      title={p.title}
+      swatch={color}
+      hollow={p.kind !== 'road' && current !== 'construction'}
+      subtitle={p.address}
+      source={
+        <>
+          מקור: {SOURCE[p.city] ?? p.city}. עודכן {formatDate(fetchedAt)}
+        </>
+      }
+    >
+      {progress !== undefined && <Progress value={progress} estimated={p.untilEstimated === true} />}
       <table>
         <tbody>
           {p.phases.map((ph, i) => {
@@ -41,24 +84,25 @@ export function ProjectPopup({ project: p, fetchedAt }: { project: Project; fetc
                 </td>
                 <td>
                   <span className={`chip chip-${ph.status}`}>{STATUS_TEXT[ph.status]}</span>
-                  {estimated && ' (סיום משוער)'}
+                  {estimated && <Estimated>סיום משוער</Estimated>}
                 </td>
               </tr>
             );
           })}
         </tbody>
       </table>
-      {facts.length > 0 && <div>{facts.join(' · ')}</div>}
-      {p.link && (
-        <div>
-          <a href={p.link} target="_blank" rel="noreferrer">
-            התיק באתר העירייה
-          </a>
-        </div>
+      {facts.length > 0 && (
+        <ul className="pop-facts">
+          {facts.map((f) => (
+            <li key={f}>{f}</li>
+          ))}
+        </ul>
       )}
-      <div className="pop-source">
-        מקור: {SOURCE[p.city] ?? p.city} · עודכן {updated(fetchedAt)}
-      </div>
-    </div>
+      {p.link && (
+        <a className="pop-link" href={p.link} target="_blank" rel="noreferrer">
+          התיק באתר העירייה
+        </a>
+      )}
+    </PopupFrame>
   );
 }

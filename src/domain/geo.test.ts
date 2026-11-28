@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LatLng } from '../data/schema.ts';
-import { areaBufferRings, bufferRings } from './geo.ts';
+import { areaBufferRings, bufferRings, clipBelow, risingFill } from './geo.ts';
 
 const M_PER_DEG_LAT = 110_574;
 
@@ -100,5 +100,36 @@ describe('areaBufferRings', () => {
 
   it('winds every ring counter-clockwise', () => {
     expect(areaBufferRings(site, 20).every((r) => signedArea(r) > 0)).toBe(true);
+  });
+});
+
+describe('clipBelow and risingFill', () => {
+  // A square from latitude 0 to 1 and longitude 0 to 1.
+  const square: LatLng[] = [
+    [0, 0],
+    [0, 1],
+    [1, 1],
+    [1, 0],
+  ];
+
+  it('keeps the part of a ring south of the line', () => {
+    const half = clipBelow(square, 0.5);
+    expect(half).toHaveLength(4);
+    expect(Math.max(...half.map((p) => p[0]))).toBe(0.5);
+    expect(Math.min(...half.map((p) => p[0]))).toBe(0);
+  });
+
+  it('keeps all of a ring under the line and none of one above it', () => {
+    expect(clipBelow(square, 2)).toEqual(square);
+    expect(clipBelow(square, -1)).toEqual([]);
+  });
+
+  it('fills the shapes from the south up to the given share of their height', () => {
+    const second: LatLng[] = square.map(([lat, lng]) => [lat + 1, lng]);
+    expect(risingFill([square, second], 0)).toEqual([]);
+    // Up to latitude 1: all of the first square, nothing of the second (a degenerate sliver is dropped or flat).
+    const half = risingFill([square, second], 0.5);
+    expect(Math.max(...half.flat().map((p) => p[0]))).toBe(1);
+    expect(risingFill([square, second], 1)).toEqual([square, second]);
   });
 });

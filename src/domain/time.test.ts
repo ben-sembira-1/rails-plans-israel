@@ -1,5 +1,7 @@
 import {
   adjacentSteps,
+  timeFromSearch,
+  withTime,
   formatTime,
   nearestStepIndex,
   NO_DATE,
@@ -73,5 +75,25 @@ describe('adjacentSteps', () => {
     expect(adjacentSteps(2030)).toEqual({ prev: 2029.75, next: 2031 });
     expect(adjacentSteps(STEPS[0] ?? 0).prev).toBeUndefined();
     expect(adjacentSteps(NO_DATE)).toEqual({ prev: 2037, next: undefined });
+  });
+});
+
+describe('timeFromSearch / withTime', () => {
+  it('reads a shared time and snaps it onto the grid', () => {
+    expect(timeFromSearch('?t=2028.25')).toBe(2028.25);
+    expect(timeFromSearch('?seed=1&t=2031.4')).toBe(2031);
+    expect(timeFromSearch('?t=9999')).toBe(NO_DATE);
+  });
+
+  it('ignores a missing or invalid time', () => {
+    expect(timeFromSearch('')).toBeNull();
+    expect(timeFromSearch('?t=')).toBeNull();
+    expect(timeFromSearch('?t=soon')).toBeNull();
+    expect(timeFromSearch('?t=1990')).toBeNull();
+  });
+
+  it('sets the time and keeps the rest of the address', () => {
+    expect(withTime('https://x.test/app/?a=1#admin', 2030)).toBe('https://x.test/app/?a=1&t=2030#admin');
+    expect(withTime('https://x.test/app/?t=2027', 2028.25)).toBe('https://x.test/app/?t=2028.25');
   });
 });

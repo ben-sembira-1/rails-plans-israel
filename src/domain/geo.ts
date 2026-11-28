@@ -86,3 +86,33 @@ export function areaBufferRings(ring: readonly LatLng[], meters: number): LatLng
   if (!first || ring.length < 3) return [];
   return [ccw(ring), ...bufferRings([...ring, first], meters)];
 }
+
+/** The part of a ring south of latitude `lat` (Sutherland–Hodgman against one edge); empty when none is. */
+export function clipBelow(ring: readonly LatLng[], lat: number): LatLng[] {
+  const out: LatLng[] = [];
+  const cross = (a: LatLng, b: LatLng): LatLng => {
+    const f = (lat - a[0]) / (b[0] - a[0]);
+    return [lat, a[1] + f * (b[1] - a[1])];
+  };
+  ring.forEach((cur, i) => {
+    const prev = ring[(i + ring.length - 1) % ring.length] ?? cur;
+    const curIn = cur[0] <= lat;
+    const prevIn = prev[0] <= lat;
+    if (curIn !== prevIn) out.push(cross(prev, cur));
+    if (curIn) out.push(cur);
+  });
+  return out;
+}
+
+/**
+ * A site's shapes filled from their southern edge up to `progress` (0..1) of their height: the drawing of a
+ * building that rises as its works go on.
+ */
+export function risingFill(rings: readonly (readonly LatLng[])[], progress: number): LatLng[][] {
+  const lats = rings.flat().map((p) => p[0]);
+  if (lats.length === 0 || progress <= 0) return [];
+  const south = Math.min(...lats);
+  const north = Math.max(...lats);
+  const lat = south + Math.min(1, progress) * (north - south);
+  return rings.map((r) => clipBelow(r, lat)).filter((r) => r.length >= 3);
+}

@@ -18,7 +18,15 @@ export const STATUS_TEXT: Readonly<Record<ProjectStatus, string>> = {
   construction: 'עבודות',
 };
 
-/** Outlines and road works are drawn from this zoom; below it, every project is a dot. */
+/** The arcs of a count bubble's ring: the same colors as each layer's swatch in the legend. */
+export const CLUSTER_COLOR: Readonly<Record<ConstructionLayer, string>> = {
+  construction: NOISE_COLORS[0],
+  permitted: NOISE_COLORS[1],
+  requested: '#80868B',
+  road: '#00796B',
+};
+
+/** Outlines and road works are drawn from this zoom; below it, projects are counted per area. */
 export const DETAIL_ZOOM = 15;
-/** More shapes than this in view fall back to dots, to keep the map smooth. */
+/** More shapes than this in view are counted per area instead, to keep the map smooth. */
 export const MAX_SHAPES = 600;

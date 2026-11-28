@@ -64,3 +64,15 @@ export function countsAt(shown: readonly ShownProject[]): Readonly<Record<Constr
   for (const s of shown) counts[s.layer]++;
   return counts;
 }
+
+/**
+ * How far a building site is through its works at time `t`, 0..1, by time: from the start of its construction
+ * phase to its end (published, or estimated). Counted to the end of the quarter shown, so the last quarter of
+ * works reads 100%. `undefined` when the project isn't a building under construction at `t`.
+ */
+export function buildProgressAt(p: Project, t: number): number | undefined {
+  if (p.kind === 'road' || p.until === null || t >= p.until) return undefined;
+  const start = p.phases.find((ph) => ph.status === 'construction')?.since;
+  if (start === undefined || t < start || p.until <= start) return undefined;
+  return Math.min(1, (t - start + 0.25) / (p.until - start));
+}

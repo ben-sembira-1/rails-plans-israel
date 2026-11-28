@@ -3,6 +3,7 @@ import {
   CONSTRUCTION_LAYERS,
   type ConstructionLayer,
 } from '../domain/construction.ts';
+import { formatCount } from '../components/format.ts';
 import type { ConstructionState } from './useConstruction.ts';
 
 export interface ConstructionPanelInfo {
@@ -15,12 +16,19 @@ export interface ConstructionPanelInfo {
 
 /** Show/hide toggles for the construction layers, with the number of projects at the selected time. */
 export function ConstructionLegend({ state, counts, hidden, onToggle }: ConstructionPanelInfo) {
-  if (state.status === 'loading') return <p className="note">טוען את נתוני הבנייה…</p>;
+  if (state.status === 'loading') {
+    return (
+      <div className="legend" aria-busy="true" aria-label="טוען את נתוני הבנייה">
+        <span className="skeleton" />
+        <span className="skeleton" />
+      </div>
+    );
+  }
   if (state.status === 'missing') return <p className="note">נתוני הבנייה לא זמינים כרגע.</p>;
   return (
     <div className="legend" role="group" aria-label="שכבות בנייה">
       {CONSTRUCTION_LAYERS.map((layer) => (
-        <label key={layer}>
+        <label key={layer} className="layer-row">
           <input
             type="checkbox"
             checked={!hidden.has(layer)}
@@ -28,9 +36,9 @@ export function ConstructionLegend({ state, counts, hidden, onToggle }: Construc
               onToggle(layer, e.target.checked);
             }}
           />
-          <span className={`build-swatch build-${layer}`} />
-          {CONSTRUCTION_LAYER_LABEL[layer]}
-          {counts && <span className="count">({counts[layer].toLocaleString('he-IL')})</span>}
+          <span className={`build-swatch build-${layer}`} aria-hidden="true" />
+          <span className="layer-name">{CONSTRUCTION_LAYER_LABEL[layer]}</span>
+          {counts && <span className="count">{formatCount(counts[layer])}</span>}
         </label>
       ))}
     </div>
