@@ -24,7 +24,8 @@ Guidance for AI agents working in this repository.
   go on the PR as **review comment threads** on the relevant diff lines (`gh api .../pulls/<n>/reviews` with
   `comments`), one task per thread, with the exact steps. `master` requires conversation resolution, so the PR
   can't merge until each one is resolved. Don't repeat them in the PR description.
-- **Change the Claude job (`.github/workflows/pr-agent.yml`) only in its own PR**, with no other changes. The
+- **Change the Claude job (`.github/workflows/pr-agent.yml`) only in its own PR**: the job and the docs that
+  describe it, no app changes. The
   Claude app only runs a workflow file identical to the one on `master`; in any other PR a changed file makes the
   action fail with "Workflow validation failed", so that PR gets no `agent-verdict`. Keep the file byte-identical
   to `master` in every other PR.
