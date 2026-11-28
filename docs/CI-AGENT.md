@@ -24,12 +24,13 @@ When the owner adds the **`agent:finish`** label, [`pr-agent.yml`](../.github/wo
    Playwright's Chromium;
 2. uploads them to the `pr-assets` branch (`scripts/upload-pr-assets.sh <pr>`);
 3. runs Claude Code ([`anthropics/claude-code-action`](https://github.com/anthropics/claude-code-action)), which
-   reads every comparison sheet and the diff, rewrites the PR description in the required structure (version
-   header, text, features, Regression section starting with the list of differences and why each is expected),
-   adds owner tasks as review threads, and either marks the PR ready (every difference expected) or leaves it a
-   draft with a comment;
+   reads every comparison sheet and the diff, does the [controls check](REGRESSION.md#controls-check) on every
+   full-size image, rewrites the PR description in the required structure (version header, text, features,
+   Regression section starting with the list of differences and why each is expected, then the controls check
+   result), adds owner tasks as review threads, and either marks the PR ready (every difference expected, every
+   control clear) or leaves it a draft with a comment;
 4. sets the commit status **`agent-verdict`** on the PR's head commit: success only if every difference was
-   expected;
+   expected and the controls check passed;
 5. removes the `agent:finish` label, so adding it again runs it again.
 
 `agent-verdict` is a required status on `master`. A new commit has no verdict, so after pushing, add

@@ -59,11 +59,31 @@ In CI this whole process runs when the owner adds the `agent:finish` label ([CI-
 2. Run the regression, then upload the images with `scripts/upload-pr-assets.sh <n>` (to the `pr-assets` branch
    under `pr-<n>/regression/`, Git LFS).
 3. Evaluate every comparison sheet: what changed against `master`, and whether each change is intended.
-4. Write the PR description in this order:
+4. Do the **controls check** (below) on every full-size image.
+5. Write the PR description in this order:
    1. text: what and why;
    2. **big images of the features the PR adds** (desktop and phone);
    3. the **Regression** section from `pr-regression.md`. It starts with **one bullet list of every difference
       from `master`** (name the commit), each saying why it is OK and expected; then the statement that the images
-      were evaluated against `master`; then the small images. A difference that is not OK is fixed before the PR is
-      marked ready, not listed.
-5. Only then mark the PR **ready for review**.
+      were evaluated against `master`; then the controls check result (below); then the small images. A difference
+      that is not OK is fixed before the PR is marked ready, not listed.
+6. Only then mark the PR **ready for review**.
+
+## Controls check
+
+A separate pass, not part of comparing with `master`: a problem counts **even when `master` has it too**.
+
+- **Look at every full-size image** in `regression-output/current/`, desktop and phone, one by one. The comparison
+  sheets scale screenshots to about a third, where a 3px gap looks like none, so they don't count for this check.
+  Zoom into every open popup, card, menu, dialog and sheet.
+- **Every button, control and menu** (ours, and Google's zoom +/−, map type, camera, fullscreen and info windows)
+  is:
+  - fully visible: not covered by, or covering, another control, panel or popup, and not cut off by the screen
+    edge or its container;
+  - clear of its **own container's edges**: about 8px or more from the border of the popup, card, sheet, dialog or
+    bar it sits in, on every side (the bottom too);
+  - clear of its **neighbours**: about 8px or more from the next button or control.
+- **Report it honestly.** The Regression section says "Controls check: done on all <n> full-size images" only
+  after looking at every one of them; otherwise it says which images were checked. Every failure is listed with
+  its image, control and side (for example "places-tab-desktop: the place card's buttons are 3px from its bottom
+  edge"). By hand, fix a failure before marking the PR ready. In CI, a failure makes the verdict not OK.
