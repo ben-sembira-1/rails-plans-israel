@@ -86,4 +86,4 @@ A separate pass, not part of comparing with `master`: a problem counts **even wh
 - **Report it honestly.** The Regression section says "Controls check: done on all <n> full-size images" only
   after looking at every one of them; otherwise it says which images were checked. Every failure is listed with
   its image, control and side (for example "places-tab-desktop: the place card's buttons are 3px from its bottom
-  edge"). By hand, fix a failure before marking the PR ready. In CI, a failure makes the verdict not OK.
+  edge"). By hand, fix a failure before marking the PR ready. In CI, each failure becomes a resolvable review thread.
