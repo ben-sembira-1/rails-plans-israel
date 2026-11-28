@@ -2,13 +2,16 @@ name: PR agent
 
 # Finishes a PR when the owner adds the `agent:finish` label (docs/CI-AGENT.md):
 # regression screenshots against master, uploaded to pr-assets, then Claude evaluates them, rewrites the PR
-# description (CLAUDE.md, docs/REGRESSION.md), adds owner tasks as review threads, and marks the PR ready only if
-# every difference is expected.
+# description (CLAUDE.md, docs/REGRESSION.md), and adds every problem it finds and every owner task as a resolvable
+# review thread; it marks the PR ready only if it found no problems.
 #
-# The required check is the commit status `agent-verdict`, set by this job on the PR's head commit: success only
-# when Claude found every difference expected. (Not the job itself: a job skipped by its `if`, e.g. when another
-# label is added, counts as passed.) A new commit has no `agent-verdict`, so the PR can't merge until the agent
-# runs again on it.
+# The job passes whenever Claude finished its evaluation, even if it found problems: those block the merge as
+# unresolved threads (master requires conversation resolution), not as a failed check. It fails only when the run
+# itself failed (regression, upload, or Claude didn't finish).
+#
+# The commit status `agent-verdict`, set by this job on the PR's head commit, says the agent evaluated that
+# commit: success when Claude finished. (Not the job itself: a job skipped by its `if`, e.g. when another label is
+# added, counts as passed.) A new commit has no `agent-verdict`, so the agent has to run again on it.
 on:
   pull_request:
     branches: [master]
@@ -82,9 +85,22 @@ jobs:
             You are finishing pull request #${{ github.event.pull_request.number }} of ${{ github.repository }}.
             Follow CLAUDE.md and docs/REGRESSION.md exactly. Do not change any code or push anything.
 
+            No one can approve a command here, so use only your allowed tools and run each command on its own, in
+            exactly the allowed forms (`gh pr view|diff|edit|ready|comment …`, `gh api …`, `cat …`, `ls …`): no
+            scripts (node, python, bash), pipes, redirects, heredocs, `$(…)`, `&&` or `;`. Write every text you
+            send to a file in regression-output/ with the Write tool, then pass that file: the description with
+            `gh pr edit ${{ github.event.pull_request.number }} --body-file regression-output/pr-body.md`, a comment
+            with `gh pr comment ${{ github.event.pull_request.number }} --body-file <file>`, a review with
+            `gh api <endpoint> --input <file>` (a JSON file).
+
             1. Read every image in regression-output/compare/ (this PR next to master) and the full-size images in
                regression-output/current/ and regression-output/master/. Read the PR diff (`gh pr diff`) to know what
                the PR intends to change.
+               Then do the controls check of docs/REGRESSION.md on every full-size image in
+               regression-output/current/ (not the comparison sheets, which are too small for it): every button,
+               control and menu, including inside popups, cards, sheets and dialogs, fully visible, and about 8px
+               or more from its own container's edges and from its neighbours. A failure counts even when master
+               has it too.
             2. Rewrite the PR description with `gh pr edit --body-file`. Its structure, in order:
                - `# v<version>`, with the version from package.json;
                - what and why;
@@ -92,13 +108,25 @@ jobs:
                  and linked from ${{ env.ASSETS }}/<file>;
                - the Regression section from regression-output/pr-regression.md. It starts with ONE bullet list of
                  every difference from master (name the commit), each saying why it is OK and expected, then the
-                 statement that you evaluated all regression images against master, then the image table.
-            3. Owner tasks (console settings, secrets, publishing rules) go as review comment threads on the relevant
-               diff lines (`gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews`),
-               never in the description. Don't duplicate threads that already exist.
-            4. If every difference is expected, run `gh pr ready ${{ github.event.pull_request.number }}`. If any is
-               not, leave the PR as a draft and comment (`gh pr comment`) which differences are unexpected and why.
-            5. Return the verdict: ok is true only if every difference is expected.
+                 statement that you evaluated all regression images against master, then the controls check
+                 result (every failure with its image, control and side, or that all images passed), then the image
+                 table.
+            3. Add every problem you found as a resolvable review thread, one problem per thread: each unexpected
+               difference, each failed control (image, control and side), and each scenario that couldn't be
+               compared with master (n/a or error in pr-regression.md although the feature exists). Say what you
+               saw, in which images (linked from ${{ env.ASSETS }}/<file>), and what would fix it. Owner tasks
+               (console settings, secrets, publishing rules) are threads too, one task per thread, with the exact
+               steps. Post them together as one review, `gh api
+               repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews --input <file>`, with
+               `"event": "COMMENT"` and a `comments` entry per thread on the most relevant line of the diff (`path`,
+               `line`, `side`: "RIGHT"); for a problem with no such line, use the first changed line of the file
+               closest to it. Read the existing threads first (`gh api
+               repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments`) and don't repeat
+               one that is already there. Never put problems or tasks only in the description or a plain comment.
+            4. If you found no problems, run `gh pr ready ${{ github.event.pull_request.number }}`. Otherwise leave the PR
+               as a draft.
+            5. Return the verdict: ok is true only if you found no problems; reason summarizes them and the number
+               of threads you added.
           # The action splits these like a shell command line: quote each value, or the spaces in Bash(gh pr …:*)
           # split the rules and the JSON loses its double quotes.
           claude_args: |
@@ -106,29 +134,39 @@ jobs:
             --allowedTools 'Read,Glob,Grep,Write,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr edit:*),Bash(gh pr ready:*),Bash(gh pr comment:*),Bash(gh api:*),Bash(cat:*),Bash(ls:*)'
             --json-schema '{"type":"object","properties":{"ok":{"type":"boolean"},"reason":{"type":"string"}},"required":["ok","reason"]}'
 
+      # Problems Claude found are review threads, which block the merge until resolved; they don't fail the job.
+      # Only a run where Claude didn't finish (no verdict) fails.
       - name: Verdict
+        id: verdict
         env:
           VERDICT: ${{ steps.claude.outputs.structured_output }}
         run: |
           echo "$VERDICT"
-          if [ "$(jq -r '.ok' <<<"$VERDICT")" != "true" ]; then
-            echo "::error::Unexpected regression differences: $(jq -r '.reason' <<<"$VERDICT")"
+          if ! jq -e 'has("ok")' <<<"$VERDICT" > /dev/null 2>&1; then
+            echo "::error::Claude didn't finish the evaluation (no verdict); see the Claude step"
             exit 1
+          fi
+          if [ "$(jq -r '.ok' <<<"$VERDICT")" = "true" ]; then
+            echo "description=Claude evaluated the regression: no problems found" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Claude found problems (see the PR's review threads): $(jq -r '.reason' <<<"$VERDICT")"
+            echo "description=Claude evaluated the regression: problems are in review threads" >> "$GITHUB_OUTPUT"
           fi
 
       - name: agent-verdict success
         if: success()
         run: >-
           gh api "repos/${{ github.repository }}/statuses/$SHA" -f state=success -f context=agent-verdict
-          -f description="Claude evaluated the regression: every difference is expected" -f target_url="$RUN_URL"
+          -f description="$DESCRIPTION" -f target_url="$RUN_URL"
         env:
+          DESCRIPTION: ${{ steps.verdict.outputs.description }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: agent-verdict failure
         if: failure() || cancelled()
         run: >-
           gh api "repos/${{ github.repository }}/statuses/$SHA" -f state=failure -f context=agent-verdict
-          -f description="Unexpected differences or a failed run; see the PR comment and the run" -f target_url="$RUN_URL"
+          -f description="The agent run failed before Claude finished; see the run" -f target_url="$RUN_URL"
         env:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
