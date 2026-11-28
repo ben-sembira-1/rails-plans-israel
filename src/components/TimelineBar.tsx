@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { eventLabel, milestoneAt } from '../domain/events.ts';
-import { markerPosition, type Marker } from '../domain/markers.ts';
+import { indexOfSlot, markerPosition, SLOT_COUNT, slotOf, type Marker } from '../domain/markers.ts';
 import { adjacentSteps, formatTime, nearestStepIndex, STEPS, YEARLY_FROM } from '../domain/time.ts';
 
 /** Play: time on each step, and a longer stop on an event so its caption can be read. */
@@ -24,7 +24,7 @@ function Track({
 }: Pick<TimelineBarProps, 'time' | 'markers' | 'onTimeChange'> & {
   onKey: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }) {
-  const last = STEPS.length - 1;
+  const index = nearestStepIndex(time);
   return (
     <div className="track" style={{ '--p': markerPosition(time) } as Style}>
       {/* The visible bar: travelled part solid, the future dashed, a tick per quarter or year. */}
@@ -35,7 +35,7 @@ function Track({
           <span
             key={s}
             className={s >= YEARLY_FROM ? 'tick year' : 'tick'}
-            style={{ '--pos': i / last } as Style}
+            style={{ '--pos': slotOf(i) / SLOT_COUNT } as Style}
           />
         ))}
       </div>
@@ -45,12 +45,12 @@ function Track({
         aria-label="ציר זמן"
         aria-valuetext={formatTime(time)}
         min={0}
-        max={last}
+        max={SLOT_COUNT}
         step={1}
-        value={nearestStepIndex(time)}
+        value={slotOf(index)}
         onKeyDown={onKey}
         onChange={(e) => {
-          const t = STEPS[Number(e.target.value)];
+          const t = STEPS[indexOfSlot(Number(e.target.value), index)];
           if (t !== undefined) onTimeChange(t);
         }}
       />

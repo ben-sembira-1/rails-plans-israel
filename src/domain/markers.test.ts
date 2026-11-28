@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { MILESTONES } from './events.ts';
-import { labelExtent, markerPosition, markersFor, overlap, TRACK_PX } from './markers.ts';
-import { NO_DATE, TODAY } from './time.ts';
+import {
+  indexOfSlot,
+  labelExtent,
+  markerPosition,
+  markersFor,
+  overlap,
+  slotOf,
+  SLOT_COUNT,
+  TRACK_PX,
+} from './markers.ts';
+import { NO_DATE, STEPS, TODAY } from './time.ts';
 
 describe('markersFor', () => {
   const markers = markersFor([2024.25, TODAY, 2029]);
@@ -40,5 +49,21 @@ describe('markersFor', () => {
     expect(markers.find((m) => m.time === NO_DATE)?.edge).toBe('end');
     expect(markers.find((m) => m.time === TODAY)?.edge).toBeNull();
     expect(markers.find((m) => m.time === 2029)).toMatchObject({ kind: 'event', side: null, edge: null });
+  });
+});
+
+describe('the gap before "no date"', () => {
+  const last = STEPS.length - 1;
+
+  it('keeps the "no date" stop clear of the last year (12px circles, 8px apart on the desktop bar)', () => {
+    const px = (markerPosition(NO_DATE) - markerPosition(STEPS[last - 1] ?? 0)) * TRACK_PX;
+    expect(px).toBeGreaterThanOrEqual(12 + 8);
+  });
+
+  it('moves from the gap on to "no date" or back to the last year, the way the slider moved', () => {
+    expect(indexOfSlot(slotOf(last - 1) + 1, last - 1)).toBe(last);
+    expect(indexOfSlot(slotOf(last) - 1, last)).toBe(last - 1);
+    expect(indexOfSlot(SLOT_COUNT, 0)).toBe(last);
+    expect(indexOfSlot(3, 0)).toBe(3);
   });
 });

@@ -14,9 +14,33 @@ export interface Marker {
   readonly edge: 'start' | 'end' | null;
 }
 
-/** Position along the bar, 0..1, by step index (the slider moves by step, not by calendar time). */
+/**
+ * "No date" isn't a point in time, so the bar leaves a gap before it, as an axis break: this many extra steps. It
+ * also keeps its stop clear of the last year's (they were about 9px apart).
+ */
+export const NO_DATE_GAP = 2;
+const LAST_INDEX = STEPS.length - 1;
+/** The slider's range: one unit per step, plus the gap before "no date". */
+export const SLOT_COUNT = LAST_INDEX + NO_DATE_GAP;
+
+/** A step's place on the bar, in slider units. */
+export function slotOf(index: number): number {
+  return index >= LAST_INDEX ? SLOT_COUNT : index;
+}
+
+/**
+ * The step for a slider value. A value in the gap before "no date" goes on in the direction it moved from the
+ * current step: on to "no date", or back to the last year.
+ */
+export function indexOfSlot(slot: number, currentIndex: number): number {
+  if (slot < LAST_INDEX) return Math.max(0, slot);
+  if (slot >= SLOT_COUNT) return LAST_INDEX;
+  return slot > slotOf(currentIndex) ? LAST_INDEX : LAST_INDEX - 1;
+}
+
+/** Position along the bar, 0..1, by step (the slider moves by step, not by calendar time). */
 export function markerPosition(t: number): number {
-  return nearestStepIndex(t) / (STEPS.length - 1);
+  return slotOf(nearestStepIndex(t)) / SLOT_COUNT;
 }
 
 const EDGE = 0.08;

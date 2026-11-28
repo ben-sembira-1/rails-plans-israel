@@ -1299,7 +1299,8 @@ h3 {
 /* What changed */
 .change-note {
   position: absolute;
-  top: 64px;
+  /* 12px under the search box (10px from the top, 50px high). */
+  top: 72px;
   left: 50%;
   transform: translateX(-50%);
   width: min(420px, calc(100% - 24px));
@@ -1532,7 +1533,7 @@ h3 {
   list-style: none;
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 8px;
   margin: 8px 0 0;
   padding: 0;
 }
@@ -1909,7 +1910,9 @@ h3 {
 .place-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
+  /* Google's popup has little padding of its own at the bottom. */
+  padding-bottom: 6px;
 }
 
 .comments {
@@ -1941,7 +1944,7 @@ h3 {
 
 .comment-form {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   align-items: flex-end;
 }
 
@@ -2208,7 +2211,7 @@ h3 {
   }
 
   .change-note {
-    top: 60px;
+    top: 70px;
   }
 }
 
