@@ -99,10 +99,12 @@ jobs:
             4. If every difference is expected, run `gh pr ready ${{ github.event.pull_request.number }}`. If any is
                not, leave the PR as a draft and comment (`gh pr comment`) which differences are unexpected and why.
             5. Return the verdict: ok is true only if every difference is expected.
+          # The action splits these like a shell command line: quote each value, or the spaces in Bash(gh pr …:*)
+          # split the rules and the JSON loses its double quotes.
           claude_args: |
             --permission-mode default
-            --allowedTools Read,Glob,Grep,Write,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr edit:*),Bash(gh pr ready:*),Bash(gh pr comment:*),Bash(gh api:*),Bash(cat:*),Bash(ls:*)
-            --json-schema {"type":"object","properties":{"ok":{"type":"boolean"},"reason":{"type":"string"}},"required":["ok","reason"]}
+            --allowedTools 'Read,Glob,Grep,Write,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr edit:*),Bash(gh pr ready:*),Bash(gh pr comment:*),Bash(gh api:*),Bash(cat:*),Bash(ls:*)'
+            --json-schema '{"type":"object","properties":{"ok":{"type":"boolean"},"reason":{"type":"string"}},"required":["ok","reason"]}'
 
       - name: Verdict
         env:
