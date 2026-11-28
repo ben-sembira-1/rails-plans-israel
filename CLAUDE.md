@@ -24,13 +24,21 @@ Guidance for AI agents working in this repository.
   go on the PR as **review comment threads** on the relevant diff lines (`gh api .../pulls/<n>/reviews` with
   `comments`), one task per thread, with the exact steps. `master` requires conversation resolution, so the PR
   can't merge until each one is resolved. Don't repeat them in the PR description.
+- **Change the Claude job (`.github/workflows/pr-agent.yml`) only in its own PR**: the job and the docs that
+  describe it, no app changes. The
+  Claude app only runs a workflow file identical to the one on `master`; in any other PR a changed file makes the
+  action fail with "Workflow validation failed", so that PR gets no `agent-verdict`. Keep the file byte-identical
+  to `master` in every other PR.
 - **PRs open as drafts.** The owner finishes one by adding the `agent:finish` label: CI runs the regression and
   Claude does the evaluation and description below and sets the required `agent-verdict` status
   ([docs/CI-AGENT.md](docs/CI-AGENT.md)). Working locally, do the same by hand: before marking a PR ready, run the
   regression (`npm run regression`, see
   [docs/REGRESSION.md](docs/REGRESSION.md)): every scenario in `regression/scenarios.ts`, in a desktop and a phone
   layout, compared with `master`.
-  Evaluate every comparison sheet yourself. The PR description is, in order: the new version as its top header (`# vX.Y.Z`); text; big screenshots of the
+  Evaluate every comparison sheet yourself, and do the **controls check** of
+  [docs/REGRESSION.md](docs/REGRESSION.md#controls-check) on every full-size image: every button, control and menu
+  fully visible, about 8px or more from its container's edges and from its neighbours, even when `master` has the
+  same problem. Never claim the check for images you didn't open. The PR description is, in order: the new version as its top header (`# vX.Y.Z`); text; big screenshots of the
   features the PR adds (desktop and phone); a **Regression** section that starts with **one bullet list of every
   difference from `master` (and its commit), each with why it is OK and expected**, then a statement that you
   evaluated the images against `master`, then the small images (linking to full size). Keep

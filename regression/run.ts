@@ -174,6 +174,19 @@ async function settle(page: Page): Promise<void> {
   await page.waitForTimeout(300);
 }
 
+/**
+ * Waits until Google has drawn the map's controls. Our own map controls (`MapControl`, e.g. the layers picker) are
+ * added by Google in the same pass, only after the map has started, so a scenario that looks for one right after
+ * the page loads could miss it and report the state as n/a while the map is still loading (it happened in CI on
+ * desktop, where the first tabs start together). Versions without a Google map go on after the timeout.
+ */
+async function mapReady(page: Page): Promise<void> {
+  // `attached`, not visible: a version may hide some of Google's controls (e.g. full screen).
+  await page
+    .waitForSelector('.gm-style .gm-control-active', { state: 'attached', timeout: 30000 })
+    .catch(() => undefined);
+}
+
 /** One screenshot, in its own tab (a separate browser context, so the in-memory places don't leak between tabs). */
 async function shoot(browser: Browser, v: Version, layout: Layout, scenario: Scenario): Promise<Result> {
   const file = join(OUT, v.label, `${scenario.id}-${layout.id}.png`);
@@ -185,6 +198,7 @@ async function shoot(browser: Browser, v: Version, layout: Layout, scenario: Sce
     const page = await context.newPage();
     await page.goto(`http://localhost:${String(PORT)}/${v.label}/`, { waitUntil: 'load' });
     await page.waitForSelector('#root > *', { timeout: 30000 });
+    await mapReady(page);
     await settle(page);
     await scenario.run(new Ui(page, layout));
     await settle(page);
