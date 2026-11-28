@@ -80,7 +80,10 @@ function MapArea({
   onCloseCard,
   highlight,
   focus,
+  controls,
 }: {
+  /** Map controls (the layers picker), placed by Google next to its own controls. */
+  controls: React.ReactNode;
   highlight: LineId | null;
   focus: { readonly key: number; readonly points: readonly LatLng[] } | null;
   network: Network;
@@ -143,6 +146,7 @@ function MapArea({
             onCloseCard={onCloseCard}
           />
         )}
+        {controls}
       </MapView>
       {store && (
         <div className="map-search">
@@ -397,6 +401,20 @@ export function App({
                 }}
                 highlight={highlight}
                 focus={focus}
+                controls={
+                  <LayersControl
+                    hidden={hidden}
+                    onToggle={toggleLayer}
+                    onHighlight={setHighlight}
+                    onFocusLine={focusLine}
+                    construction={{
+                      state: construction,
+                      counts: constructionCounts,
+                      hidden: constructionHidden,
+                      onToggle: toggleConstruction,
+                    }}
+                  />
+                }
               />
             ) : (
               <div className="map-missing" role="note">
@@ -412,20 +430,6 @@ export function App({
                 onFocus={focusOn}
                 onClose={() => {
                   setFrom(null);
-                }}
-              />
-            )}
-            {maps && (
-              <LayersControl
-                hidden={hidden}
-                onToggle={toggleLayer}
-                onHighlight={setHighlight}
-                onFocusLine={focusLine}
-                construction={{
-                  state: construction,
-                  counts: constructionCounts,
-                  hidden: constructionHidden,
-                  onToggle: toggleConstruction,
                 }}
               />
             )}

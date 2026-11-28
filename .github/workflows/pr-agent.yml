@@ -85,6 +85,11 @@ jobs:
             1. Read every image in regression-output/compare/ (this PR next to master) and the full-size images in
                regression-output/current/ and regression-output/master/. Read the PR diff (`gh pr diff`) to know what
                the PR intends to change.
+               In every image (desktop and phone), also check that each button, control and open menu is fully
+               visible and usable: not covered by or covering another control (ours, or Google's zoom +/−, map
+               type, camera and fullscreen controls), not cut off by the screen edge or a panel, and with clear
+               space around it (about 8px or more from its neighbours). A control that fails this is a problem to
+               report even when master has it too.
             2. Rewrite the PR description with `gh pr edit --body-file`. Its structure, in order:
                - `# v<version>`, with the version from package.json;
                - what and why;

@@ -11,6 +11,8 @@ const MAPS = { apiKey: 'test-key', mapId: 'test-map' };
 vi.mock('@vis.gl/react-google-maps', () => ({
   APIProvider: ({ children }: { children: React.ReactNode }) => children,
   useMapsLibrary: () => null,
+  MapControl: ({ children }: { children: React.ReactNode }) => children,
+  ControlPosition: { LEFT_BOTTOM: 6 },
 }));
 vi.mock('./components/MapView.tsx', () => ({
   MapView: ({

@@ -1,3 +1,4 @@
+import { ControlPosition, MapControl } from '@vis.gl/react-google-maps';
 import { useEffect, useId, useRef, useState } from 'react';
 import { ConstructionLegend, type ConstructionPanelInfo } from '../construction/ConstructionLegend.tsx';
 import type { LineId } from '../domain/lines.ts';
@@ -5,7 +6,8 @@ import { Legend, type LegendProps } from './Legend.tsx';
 
 /**
  * The layers picker: a button on the map, always visible, that opens the line and construction toggles. A dot on
- * the button says some layers are hidden.
+ * the button says some layers are hidden. It is a Google map control, so Google stacks it with its own controls
+ * (map type, zoom) instead of it covering them.
  */
 export function LayersControl({
   construction,
@@ -35,47 +37,50 @@ export function LayersControl({
   }, [open]);
 
   return (
-    <div className="layers-ctl" ref={root}>
-      {open && (
-        <div className="layers-pop" id={id} role="region" aria-label="שכבות">
-          <h3>קווים</h3>
-          <Legend
-            {...legend}
-            {...(legend.onFocusLine
-              ? {
-                  // Close the picker so it doesn't cover the line the map zooms to.
-                  onFocusLine: (line: LineId) => {
-                    setOpen(false);
-                    legend.onHighlight?.(null);
-                    legend.onFocusLine?.(line);
-                  },
-                }
-              : {})}
-          />
-          {construction && (
-            <>
-              <h3>בנייה ועבודות בתל אביב–יפו</h3>
-              <ConstructionLegend {...construction} />
-            </>
-          )}
-        </div>
-      )}
-      <button
-        type="button"
-        className={open ? 'map-ctl-btn on' : 'map-ctl-btn'}
-        aria-expanded={open}
-        aria-controls={id}
-        onClick={() => {
-          setOpen((o) => !o);
-        }}
-      >
-        <svg viewBox="0 0 20 20" aria-hidden="true">
-          <path d="M10 3 2.5 7 10 11l7.5-4z" />
-          <path d="m2.5 10.5 7.5 4 7.5-4M2.5 14l7.5 4 7.5-4" />
-        </svg>
-        שכבות
-        {someHidden && <span className="ctl-dot" aria-label="חלק מהשכבות מוסתרות" />}
-      </button>
-    </div>
+    <MapControl position={ControlPosition.LEFT_BOTTOM}>
+      {/* Google lays out its controls left to right; the picker is Hebrew. */}
+      <div className="layers-ctl" dir="rtl" ref={root}>
+        {open && (
+          <div className="layers-pop" id={id} role="region" aria-label="שכבות">
+            <h3>קווים</h3>
+            <Legend
+              {...legend}
+              {...(legend.onFocusLine
+                ? {
+                    // Close the picker so it doesn't cover the line the map zooms to.
+                    onFocusLine: (line: LineId) => {
+                      setOpen(false);
+                      legend.onHighlight?.(null);
+                      legend.onFocusLine?.(line);
+                    },
+                  }
+                : {})}
+            />
+            {construction && (
+              <>
+                <h3>בנייה ועבודות בתל אביב–יפו</h3>
+                <ConstructionLegend {...construction} />
+              </>
+            )}
+          </div>
+        )}
+        <button
+          type="button"
+          className={open ? 'map-ctl-btn on' : 'map-ctl-btn'}
+          aria-expanded={open}
+          aria-controls={id}
+          onClick={() => {
+            setOpen((o) => !o);
+          }}
+        >
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M10 3 2.5 7 10 11l7.5-4z" />
+            <path d="m2.5 10.5 7.5 4 7.5-4M2.5 14l7.5 4 7.5-4" />
+          </svg>
+          שכבות
+          {someHidden && <span className="ctl-dot" aria-label="חלק מהשכבות מוסתרות" />}
+        </button>
+      </div>
+    </MapControl>
   );
 }
