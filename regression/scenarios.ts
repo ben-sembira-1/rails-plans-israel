@@ -215,18 +215,32 @@ export class Ui {
     if ((await group.count()) > 0) return;
     // Since 0.7 the layer toggles are in the layers picker on the map, which an open phone sheet covers.
     await this.closePanel();
-    const picker = this.page.getByRole('button', { name: 'שכבות', exact: true });
-    if ((await picker.count()) === 0) throw new NotApplicable('this version has no construction layers');
+    const picker = await this.layersButton();
+    if (!picker) throw new NotApplicable('this version has no construction layers');
     await picker.click();
     const found = (await group.count()) > 0;
     await this.page.keyboard.press('Escape');
     if (!found) throw new NotApplicable('this version has no construction layers');
   }
 
+  /**
+   * The layers button on the map, or null in versions without one. It is a Google map control, so it only appears
+   * once the map has loaded: wait for it rather than count it at once.
+   */
+  private async layersButton() {
+    const picker = this.page.getByRole('button', { name: 'שכבות', exact: true });
+    try {
+      await picker.waitFor({ timeout: 20000 });
+      return picker;
+    } catch {
+      return null;
+    }
+  }
+
   /** Opens the layers picker on the map. */
   async openLayers(): Promise<void> {
-    const picker = this.page.getByRole('button', { name: 'שכבות', exact: true });
-    if ((await picker.count()) === 0) throw new NotApplicable('this version has no layers picker');
+    const picker = await this.layersButton();
+    if (!picker) throw new NotApplicable('this version has no layers picker');
     await picker.click();
     await this.page.getByRole('region', { name: 'שכבות' }).waitFor({ timeout: 5000 });
   }

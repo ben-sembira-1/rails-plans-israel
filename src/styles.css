@@ -1077,6 +1077,15 @@ h3 {
   border: 1px solid #4a4a4a;
 }
 
+.k-rise {
+  inline-size: 18px;
+  block-size: 14px;
+  flex: none;
+  border: 1.5px solid var(--build);
+  border-radius: 2px;
+  background: linear-gradient(to top, var(--build) 0 55%, #fff 55% 100%);
+}
+
 .k-outline {
   width: 16px;
   height: 12px;
@@ -1480,6 +1489,43 @@ h3 {
   white-space: nowrap;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+/* How far a building's works are: the same brown as its rising fill on the map. */
+.pop-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 2px 0 6px;
+}
+
+.pop-progress-text {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.pop-progress-text b {
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.pop-progress-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--rule);
+  overflow: hidden;
+}
+
+.pop-progress-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--build);
 }
 
 .pop-facts {

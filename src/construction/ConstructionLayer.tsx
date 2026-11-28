@@ -6,12 +6,13 @@ import type { ConstructionData, Project } from '../data/construction.ts';
 import type { LatLng } from '../data/validate.ts';
 import { clusterByGrid, worldPx, type Cluster } from '../domain/cluster.ts';
 import {
+  buildProgressAt,
   CONSTRUCTION_LAYERS,
   projectsAt,
   type ConstructionLayer as Layer,
   type ShownProject,
 } from '../domain/construction.ts';
-import { areaBufferRings } from '../domain/geo.ts';
+import { areaBufferRings, risingFill } from '../domain/geo.ts';
 import { SITE_HIGH_NOISE_M, SITE_LOW_NOISE_M } from '../domain/zones.ts';
 import { ProjectPopup } from './ProjectPopup.tsx';
 import { CLUSTER_COLOR, DETAIL_ZOOM, LAYER_COLOR, MAX_SHAPES, NOISE_COLORS } from './style.ts';
@@ -61,25 +62,35 @@ function NoiseZones({
   );
 }
 
+/** A building's fill rises from its southern edge as its works go on: above the outline, under the rail lines. */
+const RISING_Z = Z.future + 0.5;
+
 function ProjectShape({
   item,
+  time,
   onPopup,
   fetchedAt,
 }: {
   item: ShownProject;
+  time: number;
   onPopup: OpenPopup;
   fetchedAt: string;
 }) {
   const { project: p, layer } = item;
   const paths = useMemo(() => p.shapes.map((s) => s.map(toLatLng)), [p]);
+  const progress = layer === 'construction' ? buildProgressAt(p, time) : undefined;
+  const risen = useMemo(
+    () => (progress === undefined ? [] : risingFill(p.shapes, progress).map((r) => r.map(toLatLng))),
+    [p, progress],
+  );
   const onClick = useCallback(
     (e: google.maps.MapMouseEvent) => {
       onPopup({
         position: clickPosition(e) ?? toLatLng(p.position),
-        content: <ProjectPopup project={p} fetchedAt={fetchedAt} />,
+        content: <ProjectPopup project={p} fetchedAt={fetchedAt} progress={progress} />,
       });
     },
-    [p, fetchedAt, onPopup],
+    [p, fetchedAt, onPopup, progress],
   );
   const color = LAYER_COLOR[layer];
   if (p.kind === 'road') {
@@ -102,6 +113,8 @@ function ProjectShape({
     );
   }
   const building = layer === 'construction';
+  // A building with a known span is drawn empty (pale) and filled as it rises; without one, filled as before.
+  const rising = progress !== undefined;
   return (
     <>
       {building && <NoiseZones project={p} onClick={onClick} />}
@@ -110,12 +123,24 @@ function ProjectShape({
         strokeColor={color}
         strokeOpacity={building ? 1 : 0.9}
         strokeWeight={building ? 1.5 : layer === 'permitted' ? 2 : 1}
-        fillColor={building ? NOISE_COLORS[0] : '#ffffff'}
-        fillOpacity={building ? 0.75 : 0.35}
+        fillColor={building && !rising ? NOISE_COLORS[0] : '#ffffff'}
+        fillOpacity={building ? (rising ? 0.7 : 0.75) : 0.35}
         zIndex={Z.future}
         clickable
         onClick={onClick}
       />
+      {risen.length > 0 && (
+        <Polygon
+          paths={risen}
+          strokeOpacity={0}
+          strokeWeight={0}
+          fillColor={color}
+          fillOpacity={0.85}
+          zIndex={RISING_Z}
+          clickable
+          onClick={onClick}
+        />
+      )}
     </>
   );
 }
@@ -294,7 +319,7 @@ export function ConstructionLayer({ data, time, hidden, onPopup }: ConstructionL
   return (
     <>
       {visible.map((s) => (
-        <ProjectShape key={s.project.id} item={s} onPopup={onPopup} fetchedAt={data.fetchedAt} />
+        <ProjectShape key={s.project.id} item={s} time={time} onPopup={onPopup} fetchedAt={data.fetchedAt} />
       ))}
     </>
   );

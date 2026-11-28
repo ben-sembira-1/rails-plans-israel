@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { ConstructionData, Project } from '../data/construction.ts';
-import { countsAt, layerOf, projectsAt, projectStatusAt, quarterAfter, quarterOf } from './construction.ts';
+import {
+  buildProgressAt,
+  countsAt,
+  layerOf,
+  projectsAt,
+  projectStatusAt,
+  quarterAfter,
+  quarterOf,
+} from './construction.ts';
 import { NO_DATE } from './time.ts';
 
 const SNAPSHOT = 2026.75;
@@ -69,5 +77,26 @@ describe('projectsAt and countsAt', () => {
       requested: 0,
       road: 1,
     });
+  });
+});
+
+describe('buildProgressAt', () => {
+  // Construction from 2026 to 2028.5: ten quarters.
+  const p = project({});
+
+  it('counts the quarters of works done, to the end of the quarter shown', () => {
+    expect(buildProgressAt(p, 2026)).toBeCloseTo(0.1, 9);
+    expect(buildProgressAt(p, 2027.25)).toBeCloseTo(0.6, 9);
+    expect(buildProgressAt(p, 2028.25)).toBeCloseTo(1, 9);
+  });
+
+  it('is undefined before the works start, once they end, and for permits, requests and roads', () => {
+    expect(buildProgressAt(p, 2025.75)).toBeUndefined();
+    expect(buildProgressAt(p, 2028.5)).toBeUndefined();
+    expect(buildProgressAt(project({ until: null }), 2027)).toBeUndefined();
+    expect(
+      buildProgressAt(project({ phases: [{ since: 2025, status: 'permitted' }] }), 2027),
+    ).toBeUndefined();
+    expect(buildProgressAt(project({ kind: 'road' }), 2027)).toBeUndefined();
   });
 });

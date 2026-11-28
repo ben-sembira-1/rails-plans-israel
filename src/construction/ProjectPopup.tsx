@@ -13,8 +13,42 @@ function range(from: number, to: number | null): string {
   return last <= from ? formatTime(from) : `${formatTime(from)}–${formatTime(last)}`;
 }
 
-/** The popup of a construction project: what is built, its phases and the city's details. */
-export function ProjectPopup({ project: p, fetchedAt }: { project: Project; fetchedAt: string }) {
+/** How far the works are, by time: a thin bar in the building's color and the share in words. */
+function Progress({ value, estimated }: { value: number; estimated: boolean }) {
+  const pct = Math.round(value * 100);
+  return (
+    <div className="pop-progress">
+      <div className="pop-progress-text">
+        <span>
+          עבר <b>{pct}%</b> מזמן הבנייה
+        </span>
+        {estimated && <Estimated>לפי סיום משוער</Estimated>}
+      </div>
+      <div
+        className="pop-progress-bar"
+        role="progressbar"
+        aria-label="התקדמות הבנייה לפי הזמן"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={pct}
+      >
+        <span style={{ inlineSize: `${String(pct)}%` }} />
+      </div>
+    </div>
+  );
+}
+
+/** The popup of a construction project: what is built, how far its works are, its phases and the city's details. */
+export function ProjectPopup({
+  project: p,
+  fetchedAt,
+  progress,
+}: {
+  project: Project;
+  fetchedAt: string;
+  /** Share of the works' time that has passed, for a building under construction at the time shown. */
+  progress?: number | undefined;
+}) {
   const facts = [
     p.stage && `שלב בנייה: ${p.stage}`,
     p.units !== undefined && `${String(p.units)} יח״ד`,
@@ -37,6 +71,7 @@ export function ProjectPopup({ project: p, fetchedAt }: { project: Project; fetc
         </>
       }
     >
+      {progress !== undefined && <Progress value={progress} estimated={p.untilEstimated === true} />}
       <table>
         <tbody>
           {p.phases.map((ph, i) => {

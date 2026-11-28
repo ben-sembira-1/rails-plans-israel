@@ -259,6 +259,9 @@ function MapKey({ construction }: { construction: boolean }) {
                 אתר בנייה פעיל: רעש חזק עד {SITE_HIGH_NOISE_M} מ׳, חלש עד {SITE_LOW_NOISE_M} מ׳
               </li>
               <li>
+                <span className="k-rise" /> הבניין מתמלא מלמטה למעלה ככל שעובר זמן הבנייה
+              </li>
+              <li>
                 <span className="k-outline permit" /> היתר בנייה שטרם החל
               </li>
               <li>
