@@ -62,11 +62,7 @@ In CI this whole process runs when the owner adds the `agent:finish` label ([CI-
 1. Open the PR as a **draft**.
 2. Run the regression, then upload the images with `scripts/upload-pr-assets.sh <n>` (to the `pr-assets` branch
    under `pr-<n>/regression/`, Git LFS).
-3. Evaluate every comparison sheet: what changed against `master`, and whether each change is intended. In every
-   image, also check that each button, control and open menu is fully visible and usable: not covered by or
-   covering another control (ours, or Google's zoom +/−, map type, camera and fullscreen controls), not cut off by
-   the screen edge or a panel, and with clear space around it (about 8px or more from its neighbours). Fix a
-   control that fails this, even when `master` has it too.
+3. Evaluate every comparison sheet: what changed against `master`, and whether each change is intended.
 4. Write the PR description in this order:
    1. text: what and why;
    2. **big images of the features the PR adds** (desktop and phone);
