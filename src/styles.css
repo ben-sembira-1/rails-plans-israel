@@ -491,7 +491,7 @@ h3 {
 
 .steps {
   display: flex;
-  gap: 4px;
+  gap: 8px;
   flex: none;
 }
 
@@ -2253,7 +2253,7 @@ h3 {
   }
 
   .timeline-row {
-    gap: 6px;
+    gap: 8px;
   }
 
   .play-btn,
