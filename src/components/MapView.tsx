@@ -27,6 +27,7 @@ import { RAIL_INNER_M as INNER_M, RAIL_OUTER_M as OUTER_M } from '../domain/zone
 import type { ConstructionLayer as ConstructionLayerId } from '../domain/construction.ts';
 import { formatDate } from './format.ts';
 import { clickPosition, type OpenPopup, type Popup } from './popup.ts';
+import { PopupClearance } from './PopupClearance.tsx';
 import { Estimated, PopupFrame } from './PopupFrame.tsx';
 import { useFadeIn } from './useFadeIn.ts';
 import { sectionLineStyle, sectionZ, Z } from './sectionStyle.ts';
@@ -522,6 +523,7 @@ export function MapView({
         )}
         <MapFocus focus={focus} />
         {children}
+        <PopupClearance />
       </Map>
     </div>
   );
